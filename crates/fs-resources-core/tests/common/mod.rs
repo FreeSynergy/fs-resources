@@ -15,15 +15,37 @@ use fs_store::{ObjectId, Timestamp, TursoStore};
 
 pub const ME: &str = "https://example.org/people/me";
 
-/// A repository over a fresh in-memory store, and the store itself.
-pub async fn setup() -> (ResourceRepo, Arc<TursoStore>) {
-    let store = Arc::new(TursoStore::open_in_memory().await.unwrap());
-    (repo_for(&store, ME), store)
+/// The two stores of a program: the main one, and the one private records live in.
+/// Derefs to the main store.
+pub struct Stores {
+    pub main: Arc<TursoStore>,
+    pub private: Arc<TursoStore>,
 }
 
-/// Another view of the same store, acting for `actor`.
-pub fn repo_for(store: &Arc<TursoStore>, actor: &str) -> ResourceRepo {
-    ResourceRepo::new(store.clone(), actor).with_instance("example.org")
+impl std::ops::Deref for Stores {
+    type Target = TursoStore;
+    fn deref(&self) -> &TursoStore {
+        &self.main
+    }
+}
+
+/// Two fresh in-memory stores.
+pub async fn stores() -> Stores {
+    Stores {
+        main: Arc::new(TursoStore::open_in_memory().await.unwrap()),
+        private: Arc::new(TursoStore::open_in_memory().await.unwrap()),
+    }
+}
+
+/// A repository over fresh stores, and the stores.
+pub async fn setup() -> (ResourceRepo, Stores) {
+    let s = stores().await;
+    (repo_for(&s, ME), s)
+}
+
+/// Another view of the same stores, acting for `actor`.
+pub fn repo_for(s: &Stores, actor: &str) -> ResourceRepo {
+    ResourceRepo::new(s.main.clone(), s.private.clone(), actor).with_instance("example.org")
 }
 
 /// The IRI of person `n`.

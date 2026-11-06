@@ -144,3 +144,53 @@ async fn a_room_follows_the_rules_of_a_thing() {
         1
     );
 }
+
+#[tokio::test]
+async fn the_stock_is_derived_and_set_quantity_works_on_the_shown_value() {
+    let (repo, _) = setup().await;
+    let paint = make(&repo, ResourceKind::Material, 10).await;
+    let r = hold(&repo, &paint, 5, 0, 24).await;
+    repo.reservations().finish(r.id, 4).await.unwrap();
+    let shown = |repo: fs_resources_core::ResourceRepo, id| async move {
+        repo.items().get(id).await.unwrap().unwrap().quantity
+    };
+    assert_eq!(shown(repo.clone(), paint.id).await, 6);
+    // expected is compared with the shown value, not the base
+    assert!(repo.items().set_quantity(paint.id, 10, 8).await.is_err());
+    assert_eq!(
+        repo.items()
+            .set_quantity(paint.id, 6, 9)
+            .await
+            .unwrap()
+            .quantity,
+        9
+    );
+    assert_eq!(shown(repo.clone(), paint.id).await, 9);
+    // editing keeps the stock
+    let e = repo
+        .items()
+        .edit(paint.id, "Paint", "l", "", "", &[])
+        .await
+        .unwrap();
+    assert_eq!(e.quantity, 9);
+    assert_eq!(
+        repo.items()
+            .list(&Default::default(), None)
+            .await
+            .unwrap()
+            .items[0]
+            .quantity,
+        9
+    );
+}
+
+#[tokio::test]
+async fn deleting_the_resource_takes_its_ended_reservations_with_it() {
+    let (repo, _) = setup().await;
+    let paint = make(&repo, ResourceKind::Material, 10).await;
+    let r = hold(&repo, &paint, 5, 0, 24).await;
+    repo.reservations().finish(r.id, 4).await.unwrap();
+    repo.items().delete(paint.id).await.unwrap();
+    assert!(repo.items().get(paint.id).await.unwrap().is_none());
+    assert!(repo.reservations().get(r.id).await.unwrap().is_none());
+}

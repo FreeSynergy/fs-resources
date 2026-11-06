@@ -70,7 +70,11 @@ impl ResourceRepo {
     /// All values of this type matching `q` (type and context are added).
     pub(super) async fn find<T: Record>(&self, q: Query) -> Result<Vec<T>> {
         let q = q.of_type(T::TYPE).in_context(CONTEXT);
-        let found = self.reads.query(&q).await?;
+        let found = if T::PRIVATE {
+            self.private_reads.query(&q).await?
+        } else {
+            self.reads.query(&q).await?
+        };
         Ok(found
             .iter()
             .filter_map(|o| from_document(&o.content))

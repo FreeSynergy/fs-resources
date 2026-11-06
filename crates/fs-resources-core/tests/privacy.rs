@@ -181,7 +181,7 @@ async fn nothing_private_is_in_the_activity_log_and_the_times_are_fixed() {
     assert_eq!(log.iter().map(|x| x.object).collect::<Vec<_>>(), vec![r.id]);
 
     for id in [c.id, ask.id] {
-        let o = store.read_unlogged(id).await.unwrap().unwrap();
+        let o = store.private.read_unlogged(id).await.unwrap().unwrap();
         assert_eq!(o.envelope.published.timestamp(), 0);
         assert_eq!(o.envelope.updated.timestamp(), 0);
         assert!(o.envelope.attributed_to.is_none());

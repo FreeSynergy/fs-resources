@@ -21,7 +21,8 @@ mod provide_capacity;
 mod provide_needs;
 mod provide_reservations;
 mod reservation_ops;
+mod stock;
 mod support;
 
-pub use consts::{CONTEXT, FINISH_MATERIAL_ORDER, MIN_SHARING, WRITABLE_TYPES};
+pub use consts::{CONTEXT, MIN_SHARING, WRITABLE_TYPES};
 pub use handle::ResourceRepo;

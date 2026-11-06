@@ -1,16 +1,14 @@
 //! Finishing a reservation: things come back, material is used.
 //!
 //! Pattern: State (use) — `finish` of a thing adds to `done` and ends when all are back. Material
-//! lowers the stock by what was used and ends at once. Stock and reservation are two objects and
-//! cannot be written in one step; the order is [`FINISH_MATERIAL_ORDER`](super::FINISH_MATERIAL_ORDER):
-//! stock first, reservation last. A crash between them leaves a lowered stock with the reservation
-//! still `confirmed`, and a second `finish` would lower it again. That limit is stated, not hidden.
+//! ends at once with `done` = what was used; the stock is derived from that (see `stock`), so
+//! the only write is the reservation and a failed `finish` changes nothing.
 
 use fs_store::ObjectId;
 
 use super::handle::ResourceRepo;
 use crate::error::{Error, Result};
-use crate::model::{Reservation, ReservationState, Resource, ResourceKind};
+use crate::model::{Reservation, ReservationState, ResourceKind};
 use crate::state::{Step, reservation_next};
 
 impl ResourceRepo {
@@ -29,15 +27,9 @@ impl ResourceRepo {
         }
         let resource = self.require_resource(r.resource).await?;
         if resource.kind == ResourceKind::Material {
-            let stock = resource
-                .quantity
-                .checked_sub(quantity)
-                .ok_or(Error::Conflict("more than is in stock"))?;
-            self.save(&Resource {
-                quantity: stock,
-                ..resource
-            })
-            .await?;
+            if quantity > resource.quantity {
+                return Err(Error::Conflict("more than is in stock"));
+            }
             r.done = quantity;
             r.state = ended;
         } else {

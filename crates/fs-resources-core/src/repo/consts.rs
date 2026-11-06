@@ -16,12 +16,6 @@ pub const WRITABLE_TYPES: [&str; 4] = ["Resource", "Reservation", "Need", "Offer
 /// The fewest people who must share with a group before it sees anything of their time.
 pub const MIN_SHARING: usize = 5;
 
-/// The order of the two writes that finish a reservation of material. The stock goes first and the
-/// reservation last. A crash between them leaves the stock lowered and the reservation still
-/// `confirmed`; repeating `finish` then lowers the stock a second time. This is a known limit: the
-/// two objects cannot be written in one step.
-pub const FINISH_MATERIAL_ORDER: [&str; 2] = ["resource", "reservation"];
-
 pub(super) const AS2_TYPE: &str = "application/activity+json";
 
 /// Stored as the time of every private record, so no write time is kept.

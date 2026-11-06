@@ -12,7 +12,8 @@ use crate::sweep::{Hold, lowest_free};
 
 impl ResourceRepo {
     pub(super) async fn require_resource(&self, id: ObjectId) -> Result<Resource> {
-        self.require("resource", id).await
+        let base = self.base_resource(id).await?;
+        self.shown(base).await
     }
 
     pub(super) async fn require_reservation(&self, id: ObjectId) -> Result<Reservation> {

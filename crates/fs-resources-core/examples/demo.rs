@@ -14,8 +14,10 @@ fn hours(h: i64) -> Timestamp {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let store = Arc::new(TursoStore::open_in_memory().await?);
+    // capacity and allocations live in a store of their own
+    let private = Arc::new(TursoStore::open_in_memory().await?);
     let me = "https://example.org/people/ada";
-    let repo = ResourceRepo::new(store.clone(), me).with_instance("example.org");
+    let repo = ResourceRepo::new(store.clone(), private.clone(), me).with_instance("example.org");
 
     // Things are lent and come back; two reservations may not hold more than exists.
     let tent = repo
@@ -65,7 +67,7 @@ async fn main() -> Result<(), Error> {
         note: String::new(),
     };
     repo.capacity().set(week).await?;
-    let boss = ResourceRepo::new(store, "https://example.org/people/bo");
+    let boss = ResourceRepo::new(store, private, "https://example.org/people/bo");
     let ask = boss
         .capacity()
         .propose(me, "https://example.org/tasks/1", hours(0), hours(168), 300)

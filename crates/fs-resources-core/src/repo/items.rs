@@ -22,7 +22,10 @@ impl Items for ResourceRepo {
     }
 
     async fn get(&self, id: ObjectId) -> Result<Option<Resource>> {
-        self.load(id).await
+        match self.load::<Resource>(id).await? {
+            Some(r) => Ok(Some(self.shown(r).await?)),
+            None => Ok(None),
+        }
     }
 
     async fn list(
@@ -51,8 +54,12 @@ impl Items for ResourceRepo {
         q.limit = Some(self.page_size + 1);
         let found = self.find::<Resource>(q).await?;
         let more = found.len() > self.page_size;
+        let mut items = Vec::new();
+        for r in found.into_iter().take(self.page_size) {
+            items.push(self.shown(r).await?);
+        }
         Ok(Page {
-            items: found.into_iter().take(self.page_size).collect(),
+            items,
             next: more.then(|| Cursor::at(offset + self.page_size)),
         })
     }
@@ -99,14 +106,14 @@ impl Items for ResourceRepo {
             return Err(Error::Invalid("a resource needs a name"));
         }
         let _write = self.lock.lock().await;
-        let mut r = self.require_resource(id).await?;
+        let mut r = self.base_resource(id).await?;
         r.name = name.trim().into();
         r.unit = unit.into();
         r.owner = owner.into();
         r.place = place.into();
         r.labels = labels.iter().filter(|l| !l.is_empty()).cloned().collect();
         self.save(&r).await?;
-        Ok(r)
+        self.shown(r).await
     }
 
     async fn set_quantity(&self, id: ObjectId, expected: u32, quantity: u32) -> Result<Resource> {
@@ -114,16 +121,18 @@ impl Items for ResourceRepo {
             return Err(Error::Invalid("the quantity must not be zero"));
         }
         let _write = self.lock.lock().await;
-        let mut r = self.require_resource(id).await?;
-        if r.quantity != expected {
+        let mut r = self.base_resource(id).await?;
+        let used = self.used(&r).await?;
+        if r.quantity.saturating_sub(used) != expected {
             return Err(Error::Conflict("the quantity is not what was expected"));
         }
         if peak(&self.holds(&r, None).await?) > u64::from(quantity) {
             return Err(Error::Conflict("less than what is held"));
         }
-        r.quantity = quantity;
+        // the stored base is what makes the shown quantity the one asked for
+        r.quantity = quantity.saturating_add(used);
         self.save(&r).await?;
-        Ok(r)
+        self.shown(r).await
     }
 
     async fn delete(&self, id: ObjectId) -> Result<()> {
