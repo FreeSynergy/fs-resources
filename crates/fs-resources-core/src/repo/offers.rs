@@ -97,13 +97,18 @@ impl ResourceRepo {
             return Err(Error::Conflict("the need is closed"));
         }
         if let Some(r) = self.reservation_for(&need, &o) {
-            let resource = self.require_resource(r.resource).await?;
-            self.ensure_fits(&resource, &r).await?;
-            // The id is written into the offer (still `offered`) before the reservation exists, so
-            // a retry after a fault reuses it instead of booking a second one.
+            // A reservation that already exists under the stored id is left exactly as it is: it
+            // may have been used or handed back since the fault.
+            if self.load::<Reservation>(r.id).await?.is_none() {
+                let resource = self.require_resource(r.resource).await?;
+                self.ensure_fits(&resource, &r).await?;
+                // The id is written into the offer (still `offered`) before the reservation exists,
+                // so a retry after a fault reuses it instead of booking a second one.
+                o.reservation = Some(r.id);
+                self.save(&o).await?;
+                self.save(&r).await?;
+            }
             o.reservation = Some(r.id);
-            self.save(&o).await?;
-            self.save(&r).await?;
         }
         o.state = accepted;
         self.save(&o).await?;

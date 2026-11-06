@@ -50,22 +50,27 @@ impl Items for ResourceRepo {
         if !filter.name.is_empty() {
             q = q.name_contains(filter.name.clone());
         }
-        q.offset = offset.min(1 << 40); // the store counts in i64
-        q.limit = Some(self.page_size + 1);
-        let found = self.find::<Resource>(q).await?;
-        let more = found.len() > self.page_size;
-        let mut items = Vec::new();
-        for r in found
-            .into_iter()
-            .filter(|r| !r.deleting)
-            .take(self.page_size)
-        {
-            items.push(self.shown(r).await?);
+        // Hidden resources (being deleted) are skipped while scanning raw positions, so no row is
+        // repeated and a page is only short when the list really ends. The cursor is a raw position.
+        let (mut pos, mut items, mut next) = (offset, Vec::new(), None);
+        'scan: loop {
+            q.offset = pos.min(1 << 40); // the store counts in i64
+            q.limit = Some(self.page_size + 1);
+            let chunk = self.find::<Resource>(q.clone()).await?;
+            let n = chunk.len();
+            for (i, r) in chunk.into_iter().enumerate().filter(|(_, r)| !r.deleting) {
+                if items.len() == self.page_size {
+                    next = Some(Cursor::at(pos.saturating_add(i)));
+                    break 'scan;
+                }
+                items.push(self.shown(r).await?);
+            }
+            if n <= self.page_size {
+                break;
+            }
+            pos = pos.saturating_add(n);
         }
-        Ok(Page {
-            items,
-            next: more.then(|| Cursor::at(offset.saturating_add(self.page_size))),
-        })
+        Ok(Page { items, next })
     }
 
     async fn create(
