@@ -25,7 +25,7 @@ State pattern, one transition function. A pure sweep (Specification) computes wh
 * **Stock is derived, so finishing is one write.** A material's stored value is its base; `quantity` = base minus the `done` of its ended reservations. `finish` writes only the reservation, so a crash cannot lower the stock twice or not at all. `setQuantity` compares `expected` with the derived value and stores the base that gives the new one.
 * `free` returns stretches of equal free quantity over the asked range, adjacent equal stretches merged.
 * A `room` is a thing with its own kind; the rules are those of a thing.
-* Delete is refused while a confirmed reservation exists.
+* Delete is refused while a confirmed reservation exists. Deleting first marks the resource: it freezes the stock and hides it from reads, then removes its reservations, then the resource. A retry resumes; a marker stays only until then.
 
 ### Capacity
 The repo is built with the acting person's IRI (`actor`), and every `Capacities` method acts for that person.
@@ -36,7 +36,12 @@ The repo is built with the acting person's IRI (`actor`), and every `Capacities`
 * `load` over a range: capacity is minutes per week, pro rata by overlap; allocations pro rata by overlap, integer arithmetic, rounding documented and tested.
 * Capacity, allocations and shares are written with `UnloggedObjects`, **in a store of their own** that the host passes separately and never connects to the hub. The log of an ordinary write would carry them there. There is no undo for them, which is stated.
 * The hub manifest of this program must not list these types in `writes`; provide a const list of writable types, with a test.
-* **`groupLoad`:** the caller must be a member, otherwise it answers exactly like too few people. Only members who switched sharing on for this exact group and have a non-zero capacity in the week count. Port `GroupLookup` (`members(group)`, effective members); no port: `Unsupported`. Ranges must be whole weeks from `from`; others are refused. Each week is summed and rounded on its own to a fixed 300 minutes, so a long range cannot be used to read a rate. A week with fewer than 5 contributors makes the whole answer `hidden`, `people` 0, empty totals. These numbers are constants here, not parameters. **Stated limits:** a one-minute change at a rounding boundary moves the total by a whole step, and someone leaving shows up within a step. An attacker who fills a group with their own accounts, who can agree to share, still gets close to one person's hours; a person has to agree to share with that group, and the interface says so.
+* **`groupLoad`:** the caller must be a member, otherwise it answers exactly like too few people. Only members who switched sharing on for this exact group and have a non-zero capacity in the week count. Port `GroupLookup` (`members(group)`, effective members); no port: `Unsupported`. Ranges are whole weeks on a fixed grid from a Monday 00:00 UTC; others are refused. Each week is summed and rounded on its own to a fixed 300 minutes, so a long range cannot be used to read a rate. A week with fewer than 5 contributors makes the whole answer `hidden`, with empty totals. In a week with fewer than 5 people with allocations, `allocationsHidden` is true and `allocatedMinutes` is 0. `people` is always 0, because a count would show who is absent. These numbers are constants here, not parameters.
+  **Stated limits; the interface must say them, and a person agrees to them by sharing with that group:**
+  * A person who stops sharing or is absent in a week changes the total by their hours, rounded, so comparing two weeks shows about what they contribute. Rounding hides small differences, not large ones: 3300 against 2400 for someone with 700.
+  * A member who changes their own capacity in small steps can find a rounding edge and so learn the exact sum of the others. That is the group's sum, not one person's, unless all the others are their own accounts.
+  * A one-minute change at a rounding edge moves the total by a whole step.
+  * An attacker who fills a group with their own accounts, which can agree to share, gets close to one person's hours.
 * The RPC server must refuse `Capacities` until the transport knows the caller (contract header). Told to thread 3.
 
 ### Needs and offers
