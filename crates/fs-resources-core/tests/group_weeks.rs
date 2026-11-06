@@ -41,6 +41,7 @@ fn hidden() -> GroupLoad {
     GroupLoad {
         hidden: true,
         people: 0,
+        allocations_hidden: false,
         load: Load::default(),
     }
 }
@@ -166,25 +167,18 @@ async fn one_week_with_fewer_than_five_contributors_hides_everything() {
 }
 
 #[tokio::test]
-async fn people_is_the_fewest_contributors_in_any_week() {
+async fn people_is_always_zero_so_a_week_without_someone_shows_no_count() {
     let (_, s) = setup().await;
     let mut caps = [(300, 1000); 7];
     caps[5].1 = 1;
     caps[6].1 = 1;
     let (g, member, _) = group(&s, &caps).await;
-    let got = member
-        .capacity()
-        .group_load(g, t(0), t(2 * WEEK))
-        .await
-        .unwrap();
-    assert_eq!(got.people, 5);
-    assert_eq!(
-        member
+    for weeks in [1, 2] {
+        let got = member
             .capacity()
-            .group_load(g, t(0), t(WEEK))
+            .group_load(g, t(0), t(weeks * WEEK))
             .await
-            .unwrap()
-            .people,
-        7
-    );
+            .unwrap();
+        assert_eq!((got.hidden, got.people), (false, 0));
+    }
 }

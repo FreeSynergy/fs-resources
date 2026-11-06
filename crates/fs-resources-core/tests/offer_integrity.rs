@@ -40,6 +40,25 @@ async fn the_reservation_of_an_accepted_offer_cannot_be_cancelled_directly() {
 }
 
 #[tokio::test]
+async fn the_reservation_of_an_accepted_offer_cannot_be_changed() {
+    let (repo, _) = setup().await;
+    let (n, o) = accepted(&repo).await;
+    let id = o.reservation.unwrap();
+    let err = repo
+        .reservations()
+        .change(id, 1, t(50), t(60))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, Error::Conflict(_)));
+    let r = repo.reservations().get(id).await.unwrap().unwrap();
+    assert_eq!((r.from, r.to), (t(0), t(24)));
+    assert_eq!(
+        repo.needs().get(n.id).await.unwrap().unwrap().state,
+        NeedState::Covered
+    );
+}
+
+#[tokio::test]
 async fn a_cancel_of_other_reservations_still_works() {
     let (repo, _) = setup().await;
     let tent = make(&repo, ResourceKind::Thing, 1).await;

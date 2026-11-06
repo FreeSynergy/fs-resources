@@ -23,8 +23,8 @@ impl Items for ResourceRepo {
 
     async fn get(&self, id: ObjectId) -> Result<Option<Resource>> {
         match self.load::<Resource>(id).await? {
-            Some(r) => Ok(Some(self.shown(r).await?)),
-            None => Ok(None),
+            Some(r) if !r.deleting => Ok(Some(self.shown(r).await?)),
+            _ => Ok(None),
         }
     }
 
@@ -55,7 +55,11 @@ impl Items for ResourceRepo {
         let found = self.find::<Resource>(q).await?;
         let more = found.len() > self.page_size;
         let mut items = Vec::new();
-        for r in found.into_iter().take(self.page_size) {
+        for r in found
+            .into_iter()
+            .filter(|r| !r.deleting)
+            .take(self.page_size)
+        {
             items.push(self.shown(r).await?);
         }
         Ok(Page {
@@ -88,6 +92,7 @@ impl Items for ResourceRepo {
             owner: owner.into(),
             place: place.into(),
             labels: vec![],
+            deleting: false,
         };
         self.save(&r).await?;
         Ok(r)
@@ -139,19 +144,25 @@ impl Items for ResourceRepo {
 
     async fn delete(&self, id: ObjectId) -> Result<()> {
         let _write = self.lock.lock().await;
-        self.require_resource(id).await?;
+        let mut resource = self.load::<Resource>(id).await?.ok_or(Error::NotFound {
+            what: "resource",
+            id,
+        })?;
         let own = self
             .find::<Reservation>(Query::new().with_index("resource", id.to_string()))
             .await?;
-        if own.iter().any(|r| r.state == ReservationState::Confirmed) {
-            return Err(Error::Conflict("a confirmed reservation exists"));
+        if !resource.deleting {
+            if own.iter().any(|r| r.state == ReservationState::Confirmed) {
+                return Err(Error::Conflict("a confirmed reservation exists"));
+            }
+            // Mark first: from here the resource is hidden, its stock frozen and no reservation
+            // is taken, so a fault below leaves nothing visible, and deleting again resumes.
+            resource.deleting = true;
+            self.save(&resource).await?;
         }
-        // The resource goes first: its stock is derived from its ended reservations, so removing
-        // those first could raise the stock for a moment (or for good, after a fault).
-        self.erase::<Resource>(id).await?;
         for r in own {
             self.erase::<Reservation>(r.id).await?;
         }
-        Ok(())
+        self.erase::<Resource>(id).await
     }
 }

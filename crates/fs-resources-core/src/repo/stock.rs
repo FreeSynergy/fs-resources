@@ -40,6 +40,13 @@ impl ResourceRepo {
 
     /// The stored resource, base quantity as written.
     pub(super) async fn base_resource(&self, id: ObjectId) -> Result<Resource> {
-        self.require("resource", id).await
+        let r: Resource = self.require("resource", id).await?;
+        if r.deleting {
+            return Err(crate::Error::NotFound {
+                what: "resource",
+                id,
+            });
+        }
+        Ok(r)
     }
 }

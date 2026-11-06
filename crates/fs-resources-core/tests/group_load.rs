@@ -79,6 +79,7 @@ async fn four_sharing_people_are_hidden() {
         GroupLoad {
             hidden: true,
             people: 0,
+            allocations_hidden: false,
             load: Load::default()
         }
     );
@@ -98,10 +99,10 @@ async fn five_sharing_people_show_rounded_totals() {
     }
     let got = c.seen(c.x).await;
     assert!(!got.hidden);
-    assert_eq!(got.people, 5);
+    assert_eq!(got.people, 0, "a count would show who is absent");
     assert_eq!(got.load.capacity_minutes, 1500); // 1595 to the nearest 60 * 5 = 300
     assert_eq!(got.load.allocated_minutes, 0);
-    // an accepted allocation of 200 minutes shows as 300 (nearest step)
+    // one person with an allocation is too few: it is hidden, not rounded
     let ask = repo_for(&c.store, &person("boss"))
         .capacity()
         .propose(&person("p0"), "task", t(0), t(WEEK), 200)
@@ -112,7 +113,10 @@ async fn five_sharing_people_show_rounded_totals() {
         .answer(ask.id, true)
         .await
         .unwrap();
-    assert_eq!(c.seen(c.x).await.load.allocated_minutes, 300);
+    let seen = c.seen(c.x).await;
+    assert!(seen.allocations_hidden);
+    assert_eq!(seen.load.allocated_minutes, 0);
+    assert_eq!(seen.load.capacity_minutes, 1500);
 }
 
 #[tokio::test]
@@ -140,7 +144,7 @@ async fn a_member_who_does_not_share_does_not_count() {
     // p4 is a member with capacity, but never switched sharing on
     assert!(c.seen(c.x).await.hidden);
     c.share(4, c.x, true).await;
-    assert_eq!(c.seen(c.x).await.people, 5);
+    assert!(!c.seen(c.x).await.hidden);
     c.share(4, c.x, false).await;
     assert!(c.seen(c.x).await.hidden);
 }
@@ -151,7 +155,7 @@ async fn sharing_with_one_group_does_not_count_for_another() {
     for i in 0..5 {
         c.share(i, c.x, true).await;
     }
-    assert_eq!(c.seen(c.x).await.people, 5);
+    assert!(!c.seen(c.x).await.hidden);
     assert!(
         c.seen(c.y).await.hidden,
         "all five are members of Y but shared with X only"

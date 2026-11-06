@@ -24,6 +24,11 @@ impl ResourceRepo {
         }
         check_range(from, to)?;
         let old = self.require_reservation(id).await?;
+        if self.held_by_offer(id).await? {
+            return Err(Error::Conflict(
+                "an accepted offer holds it; withdraw the offer",
+            ));
+        }
         let new = Reservation {
             quantity,
             from,

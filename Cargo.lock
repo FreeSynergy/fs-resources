@@ -520,8 +520,8 @@ checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
 name = "fs-interfaces"
-version = "0.20.0"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.20.0#b97fa7a7e9279cc28ee0ff14db296ed04b9ebd58"
+version = "0.25.0"
+source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.25.0#8102848eca79b1674f7f2133ed15517f8a196610"
 dependencies = [
  "capnp",
 ]

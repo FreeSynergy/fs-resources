@@ -73,8 +73,10 @@ pub struct Load {
 pub struct GroupLoad {
     /// Too few people share; everything else stays empty.
     pub hidden: bool,
-    /// How many share; 0 when hidden.
+    /// Unused, always 0: a count would show who is absent in a week.
     pub people: u32,
+    /// Too few people have allocations in some week; `allocated_minutes` stays 0.
+    pub allocations_hidden: bool,
     /// Rounded totals.
     pub load: Load,
 }

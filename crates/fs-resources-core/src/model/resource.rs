@@ -39,6 +39,10 @@ pub struct Resource {
     pub place: String,
     /// Free labels.
     pub labels: Vec<String>,
+    /// Internal: set while a delete is under way. Such a resource is hidden and takes no
+    /// reservations; deleting again resumes.
+    #[serde(default)]
+    pub deleting: bool,
 }
 
 /// Which resources `list` returns; every field that is set must match.

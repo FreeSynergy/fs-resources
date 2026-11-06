@@ -80,7 +80,7 @@ impl ResourceRepo {
         Ok(r)
     }
 
-    async fn held_by_offer(&self, reservation: ObjectId) -> Result<bool> {
+    pub(super) async fn held_by_offer(&self, reservation: ObjectId) -> Result<bool> {
         let q = Query::new()
             .with_index("reservation", reservation.to_string())
             .with_index("state", "accepted");

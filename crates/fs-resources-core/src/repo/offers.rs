@@ -10,7 +10,7 @@ use fs_store::ObjectId;
 
 use super::handle::ResourceRepo;
 use crate::error::{Error, Result};
-use crate::model::{Need, NeedState, Offer, OfferState, Reservation, ReservationState, Resource};
+use crate::model::{Need, NeedState, Offer, OfferState, Reservation, ReservationState};
 use crate::state::{OfferStep, Step, offer_next, reservation_next};
 
 impl ResourceRepo {
@@ -36,7 +36,7 @@ impl ResourceRepo {
             return Err(Error::Conflict("the need is closed"));
         }
         if let Some(r) = resource {
-            self.require::<Resource>("resource", r).await?;
+            self.require_resource(r).await?;
         }
         let o = Offer {
             id: ObjectId::new(),
@@ -92,21 +92,30 @@ impl ResourceRepo {
             return Ok(o);
         }
         let need = self.require_need(o.need).await?;
-        o.state = offer_next(o.state, OfferStep::Accept)?;
+        let accepted = offer_next(o.state, OfferStep::Accept)?;
         if need.state == NeedState::Closed {
             return Err(Error::Conflict("the need is closed"));
         }
-        o.reservation = self.book_for(&need, &o).await?.map(|r| r.id);
+        if let Some(r) = self.reservation_for(&need, &o) {
+            let resource = self.require_resource(r.resource).await?;
+            self.ensure_fits(&resource, &r).await?;
+            // The id is written into the offer (still `offered`) before the reservation exists, so
+            // a retry after a fault reuses it instead of booking a second one.
+            o.reservation = Some(r.id);
+            self.save(&o).await?;
+            self.save(&r).await?;
+        }
+        o.state = accepted;
         self.save(&o).await?;
         self.settle_need(o.need).await?;
         Ok(o)
     }
 
     /// The confirmed reservation an accepted offer makes, if it names a resource and the need has
-    /// a time. Nothing is written if it does not fit.
-    async fn book_for(&self, need: &Need, offer: &Offer) -> Result<Option<Reservation>> {
+    /// a time. It keeps the id the offer already holds, if any. Nothing is written here.
+    fn reservation_for(&self, need: &Need, offer: &Offer) -> Option<Reservation> {
         let (Some(resource), Some(from), Some(to)) = (offer.resource, need.from, need.to) else {
-            return Ok(None);
+            return None;
         };
         let holder = if need.subject.is_empty() {
             self.iri(need.id)
@@ -114,7 +123,7 @@ impl ResourceRepo {
             need.subject.clone()
         };
         let r = Reservation {
-            id: ObjectId::new(),
+            id: offer.reservation.unwrap_or_default(),
             resource,
             quantity: offer.quantity,
             from,
@@ -125,9 +134,6 @@ impl ResourceRepo {
             note: format!("offer {}", offer.id),
             done: 0,
         };
-        let res = self.require_resource(resource).await?;
-        self.ensure_fits(&res, &r).await?;
-        self.save(&r).await?;
-        Ok(Some(r))
+        Some(r)
     }
 }
