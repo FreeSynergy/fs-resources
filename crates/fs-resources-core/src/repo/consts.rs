@@ -16,6 +16,12 @@ pub const WRITABLE_TYPES: [&str; 4] = ["Resource", "Reservation", "Need", "Offer
 /// The fewest people who must share with a group before it sees anything of their time.
 pub const MIN_SHARING: usize = 5;
 
+/// A group total is rounded to the nearest multiple of this many minutes, one week at a time.
+pub const GROUP_ROUND: u64 = 300;
+
+/// The most weeks one `group_load` may ask for.
+pub(super) const MAX_WEEKS: usize = 520;
+
 pub(super) const AS2_TYPE: &str = "application/activity+json";
 
 /// Stored as the time of every private record, so no write time is kept.

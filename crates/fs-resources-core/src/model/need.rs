@@ -106,6 +106,10 @@ impl Record for Offer {
             ("need", self.need.to_string()),
             ("by", self.by.clone()),
             ("state", self.state.as_str().into()),
+            (
+                "reservation",
+                self.reservation.map(|r| r.to_string()).unwrap_or_default(),
+            ),
         ]
     }
 }

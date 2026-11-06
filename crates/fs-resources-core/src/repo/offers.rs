@@ -1,6 +1,7 @@
 //! Offers: make, withdraw, decide.
 //!
-//! Pattern: State (use) — every change goes through `offer_next`. Accepting an offer that names a
+//! Pattern: State (use) — every change goes through `offer_next`; repeating `decide` or `withdraw`
+//! to the state the offer is already in only finishes the follow-up work. Accepting an offer that names a
 //! resource, on a need with a time, books a confirmed reservation through the same fit check as
 //! `confirm`. The order is reservation, offer, need: a crash leaves at worst a hold that no offer
 //! refers to (it can be cancelled), never an accepted offer without its hold.
@@ -54,9 +55,17 @@ impl ResourceRepo {
     /// Withdraw or decline: an accepted offer gives up its reservation and the need is settled.
     pub(super) async fn end_offer(&self, id: ObjectId, step: OfferStep) -> Result<Offer> {
         let mut o = self.require_offer(id).await?;
-        o.state = offer_next(o.state, step)?;
+        let target = match step {
+            OfferStep::Withdraw => OfferState::Withdrawn,
+            _ => OfferState::Declined,
+        };
+        // Repeating the step finishes what a crash left behind: the offer is saved first, so the
+        // release and the settling below are the parts that can be missing.
+        if o.state != target {
+            o.state = offer_next(o.state, step)?;
+            self.save(&o).await?;
+        }
         self.release(&o).await?;
-        self.save(&o).await?;
         self.settle_need(o.need).await?;
         Ok(o)
     }
@@ -77,6 +86,11 @@ impl ResourceRepo {
 
     pub(super) async fn accept_offer(&self, id: ObjectId) -> Result<Offer> {
         let mut o = self.require_offer(id).await?;
+        if o.state == OfferState::Accepted {
+            // a repeated accept settles what a crash left unfinished
+            self.settle_need(o.need).await?;
+            return Ok(o);
+        }
         let need = self.require_need(o.need).await?;
         o.state = offer_next(o.state, OfferStep::Accept)?;
         if need.state == NeedState::Closed {

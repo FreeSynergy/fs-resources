@@ -32,11 +32,11 @@ impl<T> Page<T> {
     /// Cut one page of `size` items out of a complete, ordered list.
     pub fn cut(all: Vec<T>, cursor: Option<&Cursor>, size: usize) -> Self {
         let offset = cursor.map_or(0, Cursor::offset);
-        let more = all.len() > offset + size;
+        let more = all.len() > offset.saturating_add(size);
         let items = all.into_iter().skip(offset).take(size).collect();
         Self {
             items,
-            next: more.then(|| Cursor::at(offset + size)),
+            next: more.then(|| Cursor::at(offset.saturating_add(size))),
         }
     }
 }

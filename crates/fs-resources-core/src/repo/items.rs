@@ -50,7 +50,7 @@ impl Items for ResourceRepo {
         if !filter.name.is_empty() {
             q = q.name_contains(filter.name.clone());
         }
-        q.offset = offset;
+        q.offset = offset.min(1 << 40); // the store counts in i64
         q.limit = Some(self.page_size + 1);
         let found = self.find::<Resource>(q).await?;
         let more = found.len() > self.page_size;
@@ -60,7 +60,7 @@ impl Items for ResourceRepo {
         }
         Ok(Page {
             items,
-            next: more.then(|| Cursor::at(offset + self.page_size)),
+            next: more.then(|| Cursor::at(offset.saturating_add(self.page_size))),
         })
     }
 
@@ -130,7 +130,9 @@ impl Items for ResourceRepo {
             return Err(Error::Conflict("less than what is held"));
         }
         // the stored base is what makes the shown quantity the one asked for
-        r.quantity = quantity.saturating_add(used);
+        r.quantity = quantity
+            .checked_add(used)
+            .ok_or(Error::Invalid("the quantity is too large"))?;
         self.save(&r).await?;
         self.shown(r).await
     }
@@ -144,9 +146,12 @@ impl Items for ResourceRepo {
         if own.iter().any(|r| r.state == ReservationState::Confirmed) {
             return Err(Error::Conflict("a confirmed reservation exists"));
         }
+        // The resource goes first: its stock is derived from its ended reservations, so removing
+        // those first could raise the stock for a moment (or for good, after a fault).
+        self.erase::<Resource>(id).await?;
         for r in own {
             self.erase::<Reservation>(r.id).await?;
         }
-        self.erase::<Resource>(id).await
+        Ok(())
     }
 }

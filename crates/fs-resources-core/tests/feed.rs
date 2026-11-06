@@ -56,8 +56,8 @@ async fn public_changes_arrive_in_order() {
             Created(entity(Need, need.id)),
             Created(entity(Offer, offer.id)),
             Updated(entity(Reservation, r.id)), // cancelled
-            Deleted(entity(Reservation, r.id)),
             Deleted(entity(Resource, tent.id)),
+            Deleted(entity(Reservation, r.id)),
         ]
     );
 }

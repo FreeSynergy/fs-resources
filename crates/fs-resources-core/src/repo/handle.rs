@@ -72,6 +72,15 @@ impl ResourceRepo {
         self
     }
 
+    /// The same repository for another person: it shares this one's write lock, store handles and
+    /// ports. A server uses it per caller, because separate repos on one store share no lock.
+    #[must_use]
+    pub fn as_actor(&self, iri: impl Into<String>) -> Self {
+        let mut other = self.clone();
+        other.actor = iri.into();
+        other
+    }
+
     /// The `Items` interface of this provider.
     pub fn items(&self) -> &dyn Items {
         self

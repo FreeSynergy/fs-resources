@@ -35,7 +35,7 @@ pub use model::{
     NeedState, Offer, OfferState, Page, Reservation, ReservationState, Resource, ResourceFilter,
     ResourceKind,
 };
-pub use repo::{CONTEXT, MIN_SHARING, ResourceRepo, WRITABLE_TYPES};
+pub use repo::{CONTEXT, GROUP_ROUND, MIN_SHARING, ResourceRepo, WRITABLE_TYPES};
 pub use traits::{
     Capacities, EntityKind, GroupLookup, Items, Needs, Reservations, ResourceChange,
     ResourceEntity, ResourceFeed, ResourceListener, Subscription,

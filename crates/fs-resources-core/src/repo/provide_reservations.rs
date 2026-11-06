@@ -26,7 +26,11 @@ impl Reservations for ResourceRepo {
         cursor: Option<&Cursor>,
     ) -> Result<Page<Reservation>> {
         let q = Query::new().with_index("resource", resource.to_string());
-        self.page_of(q, |r| Self::touches(r, from, to), cursor)
+        let material = self
+            .load::<crate::model::Resource>(resource)
+            .await?
+            .is_some_and(|r| r.kind == crate::model::ResourceKind::Material);
+        self.page_of(q, |r| Self::touches(r, material, from, to), cursor)
             .await
     }
 

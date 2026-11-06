@@ -78,6 +78,9 @@ impl ResourceRepo {
                 step: "edited",
             });
         }
+        if (n.from, n.to) != when && self.has_accepted(id).await? {
+            return Err(Error::Conflict("an offer is accepted for this time"));
+        }
         n.what = what.trim().into();
         n.quantity = quantity;
         n.unit = unit.into();
@@ -105,19 +108,28 @@ impl ResourceRepo {
     /// Recompute `covered` of a need from its accepted offers and settle its state.
     pub(super) async fn settle_need(&self, id: ObjectId) -> Result<Need> {
         let mut n = self.require_need(id).await?;
-        let covered = self
+        let sum: u64 = self
             .offers_of(id)
             .await?
             .iter()
             .filter(|o| o.state == OfferState::Accepted)
-            .map(|o| o.quantity)
+            .map(|o| u64::from(o.quantity))
             .sum();
+        let covered = u32::try_from(sum).unwrap_or(u32::MAX);
         let state = settle(n.state, covered, n.quantity);
         if (covered, state) != (n.covered, n.state) {
             (n.covered, n.state) = (covered, state);
             self.save(&n).await?;
         }
         Ok(n)
+    }
+
+    async fn has_accepted(&self, need: ObjectId) -> Result<bool> {
+        Ok(self
+            .offers_of(need)
+            .await?
+            .iter()
+            .any(|o| o.state == OfferState::Accepted))
     }
 
     pub(super) async fn delete_need(&self, id: ObjectId) -> Result<()> {

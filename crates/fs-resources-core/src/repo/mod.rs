@@ -24,5 +24,5 @@ mod reservation_ops;
 mod stock;
 mod support;
 
-pub use consts::{CONTEXT, MIN_SHARING, WRITABLE_TYPES};
+pub use consts::{CONTEXT, GROUP_ROUND, MIN_SHARING, WRITABLE_TYPES};
 pub use handle::ResourceRepo;

@@ -22,13 +22,16 @@ impl ResourceRepo {
 
     pub(super) async fn set_capacity(&self, wanted: Capacity) -> Result<Capacity> {
         check_range(wanted.from, wanted.to)?;
+        if wanted.minutes_per_week == 0 {
+            return Err(Error::Invalid("the minutes per week must not be zero"));
+        }
         let mine = self.capacities_of(&self.actor).await?;
-        // An id that belongs to someone else is never overwritten: the record gets a fresh id.
-        let taken = self.private.read_unlogged(wanted.id).await?.is_some();
-        let id = if taken && !mine.iter().any(|m| m.id == wanted.id) {
-            ObjectId::new()
-        } else {
+        // A given id is kept only if the record is mine; in every other case, taken or free, the
+        // record gets a fresh id, so `set` says nothing about ids of others.
+        let id = if mine.iter().any(|m| m.id == wanted.id) {
             wanted.id
+        } else {
+            ObjectId::new()
         };
         let clash = mine
             .iter()
@@ -67,18 +70,20 @@ impl ResourceRepo {
             .with_index("person", self.actor.clone())
             .with_index("group", group.to_string());
         let existing = self.find::<GroupShare>(q).await?;
-        match (share, existing.first()) {
-            (true, None) => {
-                let s = GroupShare {
-                    id: ObjectId::new(),
-                    person: self.actor.clone(),
-                    group,
-                };
-                self.save(&s).await
-            }
-            (false, Some(s)) => self.erase::<GroupShare>(s.id).await,
-            _ => Ok(()),
+        // One share per person and group; a duplicate is removed, and stopping removes them all.
+        let keep = usize::from(share);
+        for s in existing.iter().skip(keep) {
+            self.erase::<GroupShare>(s.id).await?;
         }
+        if share && existing.is_empty() {
+            let s = GroupShare {
+                id: ObjectId::new(),
+                person: self.actor.clone(),
+                group,
+            };
+            self.save(&s).await?;
+        }
+        Ok(())
     }
 
     pub(super) async fn shared_with(&self) -> Result<Vec<ObjectId>> {

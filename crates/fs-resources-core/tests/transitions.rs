@@ -99,16 +99,20 @@ async fn needs_and_offers_only_take_the_steps_of_their_state() {
 
     let open = needs.create("chairs", 5, "", None, None, "").await.unwrap();
     let accepted = needs.offer(open.id, ME, 1, None, "").await.unwrap();
-    needs.decide(accepted.id, true).await.unwrap();
-    illegal(needs.decide(accepted.id, true).await, "accepted");
+    let accepted_offer = needs.decide(accepted.id, true).await.unwrap();
+    // repeating the same decision is fine: it only settles again
+    assert_eq!(
+        needs.decide(accepted.id, true).await.unwrap(),
+        accepted_offer
+    );
     let declined = needs.offer(open.id, ME, 1, None, "").await.unwrap();
     needs.decide(declined.id, false).await.unwrap();
     illegal(needs.decide(declined.id, true).await, "declined");
-    illegal(needs.decide(declined.id, false).await, "declined");
+    needs.decide(declined.id, false).await.unwrap(); // repeated: settles again
     illegal(needs.withdraw(declined.id).await, "declined");
     let withdrawn = needs.offer(open.id, ME, 1, None, "").await.unwrap();
     needs.withdraw(withdrawn.id).await.unwrap();
-    illegal(needs.withdraw(withdrawn.id).await, "withdrawn");
+    needs.withdraw(withdrawn.id).await.unwrap(); // repeated: settles again
     illegal(needs.decide(withdrawn.id, true).await, "withdrawn");
     // the accepted one is still counted
     assert_eq!(needs.get(open.id).await.unwrap().unwrap().covered, 1);

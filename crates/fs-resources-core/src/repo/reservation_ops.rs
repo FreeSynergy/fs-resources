@@ -7,6 +7,7 @@ use fs_store::{ObjectId, Query, Timestamp};
 
 use super::handle::ResourceRepo;
 use crate::error::{Error, Result};
+use crate::model::Offer;
 use crate::model::{Cursor, FreePeriod, Page, Reservation, ReservationState};
 use crate::state::{Step, reservation_next};
 use crate::sweep::{free_periods, overlaps};
@@ -70,8 +71,20 @@ impl ResourceRepo {
         if step == Step::Cancel && r.done > 0 {
             return Err(Error::Conflict("part of it has already come back"));
         }
+        if step == Step::Cancel && self.held_by_offer(id).await? {
+            return Err(Error::Conflict(
+                "an accepted offer holds it; withdraw the offer",
+            ));
+        }
         self.save(&r).await?;
         Ok(r)
+    }
+
+    async fn held_by_offer(&self, reservation: ObjectId) -> Result<bool> {
+        let q = Query::new()
+            .with_index("reservation", reservation.to_string())
+            .with_index("state", "accepted");
+        Ok(!self.find::<Offer>(q).await?.is_empty())
     }
 
     pub(super) async fn page_of(
@@ -102,7 +115,12 @@ impl ResourceRepo {
         Ok(free_periods(res.quantity, &holds, from, to))
     }
 
-    pub(super) fn touches(r: &Reservation, from: Timestamp, to: Timestamp) -> bool {
+    /// Whether `r` is part of `[from, to)`: a held reservation of material has no end, so it counts
+    /// from its start on, as `free` counts it.
+    pub(super) fn touches(r: &Reservation, material: bool, from: Timestamp, to: Timestamp) -> bool {
+        if material && r.state == ReservationState::Confirmed {
+            return r.from < to;
+        }
         overlaps(r.from, r.to, from, to)
     }
 }

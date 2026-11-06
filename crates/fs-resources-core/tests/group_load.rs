@@ -24,9 +24,12 @@ async fn club() -> Club {
     let (_, store) = setup().await;
     let (x, y) = (ObjectId::new(), ObjectId::new());
     let people: Vec<String> = (0..6).map(|i| person(&format!("p{i}"))).collect();
+    // the asker is a member too, with no capacity and not sharing
+    let mut everyone = people.clone();
+    everyone.push(person("asker"));
     let mut roster = Roster::default();
-    roster.0.insert(x, people.clone());
-    roster.0.insert(y, people.clone());
+    roster.0.insert(x, everyone.clone());
+    roster.0.insert(y, everyone);
     for (i, p) in people.iter().enumerate() {
         repo_for(&store, p)
             .capacity()
