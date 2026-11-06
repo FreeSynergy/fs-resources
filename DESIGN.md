@@ -21,7 +21,8 @@ State pattern, one transition function. A pure sweep (Specification) computes wh
 * `requested` holds nothing. `confirmed` holds `quantity - done` for `[from, to)`.
 * `material` is used up: a confirmed reservation holds from `from` until finished, with no end, because what is used on Monday is gone on Tuesday.
 * `confirm`, `change`, `setQuantity` and accepting an offer run under one lock across read and write, so two cannot overbook together. Clones share the lock.
-* `finish` on a thing adds to `done` and frees that many; it ends when `done = quantity`; more than is out is refused. On material it lowers the stock by `quantity`, the rest returns, it ends at once. Stock and reservation are two objects: write the reservation last so that a crash leaves a stock that is low rather than a reservation that can be finished twice; state this limit here, and test the order. Refused once it has ended.
+* `finish` on a thing adds to `done` and frees that many; it ends when `done = quantity`; more than is out is refused. On material it lowers the stock by `quantity`, the rest returns, it ends at once. Refused once it has ended.
+* **Stock is derived, so finishing is one write.** A material's stored value is its base; `quantity` = base minus the `done` of its ended reservations. `finish` writes only the reservation, so a crash cannot lower the stock twice or not at all. `setQuantity` compares `expected` with the derived value and stores the base that gives the new one.
 * `free` returns stretches of equal free quantity over the asked range, adjacent equal stretches merged.
 * A `room` is a thing with its own kind; the rules are those of a thing.
 * Delete is refused while a confirmed reservation exists.
@@ -32,7 +33,7 @@ The repo is built with the acting person's IRI (`actor`), and every `Capacities`
 * `propose` always returns `proposed`, whether the person exists or not.
 * `answer` can be repeated. `withdraw` only by the proposer. Only `accepted` counts in `load`.
 * `load` over a range: capacity is minutes per week, pro rata by overlap; allocations pro rata by overlap, integer arithmetic, rounding documented and tested.
-* Capacity, allocations and shares are written with `UnloggedObjects`. The hub must not get them, and the log of an ordinary write would carry them there; there is no undo for them, which is stated.
+* Capacity, allocations and shares are written with `UnloggedObjects`, **in a store of their own** that the host passes separately and never connects to the hub. The log of an ordinary write would carry them there. There is no undo for them, which is stated.
 * The hub manifest of this program must not list these types in `writes`; provide a const list of writable types, with a test.
 * **`groupLoad`:** only people who switched sharing on for this exact group, and who are members according to the port `GroupLookup` (`members(group)`, effective members); no port: `Unsupported`. Fewer than 5 such people: `hidden`, `people` 0, empty totals. Totals rounded to the nearest 60 minutes × the number of people, so one member's small change disappears. The minimum is a constant here, not a parameter. **Stated limit:** an attacker who fills a group with their own accounts, who can agree to share, still gets close to one person's hours; a person has to agree to share with that group, and the interface says so.
 * The RPC server must refuse `Capacities` until the transport knows the caller (contract header). Told to thread 3.
