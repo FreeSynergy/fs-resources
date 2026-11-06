@@ -87,3 +87,15 @@ impl GroupLookup for Roster {
         Ok(self.0.get(&group).cloned().unwrap_or_default())
     }
 }
+
+/// A capacity record of `minutes_per_week` for `[from, to)` hours, for whoever sets it.
+pub fn cap(minutes_per_week: u32, from: i64, to: i64) -> fs_resources_core::Capacity {
+    fs_resources_core::Capacity {
+        id: ObjectId::new(),
+        person: String::new(),
+        from: t(from),
+        to: t(to),
+        minutes_per_week,
+        note: "private note".into(),
+    }
+}
