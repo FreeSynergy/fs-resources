@@ -5,7 +5,18 @@
 
 ## State
 
-Version 0.1.0, being built. The State table is filled in as parts are finished.
+Version 0.1.0. No capnp server and no GUI.
+
+| Area | State |
+|---|---|
+| Resources, derived stock, reservations with a pure sweep, one write for `finish`, resumable delete | done |
+| Capacity, allocations, shares: own unlogged store, acting person only, `as_actor` | done; the RPC server must refuse them until the transport knows the caller |
+| `groupLoad` through `GroupLookup` | done, with the limits below |
+| Needs and offers, reservation on accepting | done; see Open points |
+| capnp server, costs, MSPDI, skills | not built |
+| Tests | 115, real stores |
+
+Checked by an independent reviewer over four rounds before the tag.
 
 ## Decisions (the owner may change them; all provisional)
 
@@ -39,13 +50,16 @@ The repo is built with the acting person's IRI (`actor`), and every `Capacities`
 * **`groupLoad`:** the caller must be a member, otherwise it answers exactly like too few people. Only members who switched sharing on for this exact group and have a non-zero capacity in the week count. Port `GroupLookup` (`members(group)`, effective members); no port: `Unsupported`. Ranges are whole weeks on a fixed grid from a Monday 00:00 UTC; others are refused. Each week is summed and rounded on its own to a fixed 300 minutes, so a long range cannot be used to read a rate. A week with fewer than 5 contributors makes the whole answer `hidden`, with empty totals. In a week with fewer than 5 people with allocations, `allocationsHidden` is true and `allocatedMinutes` is 0. `people` is always 0, because a count would show who is absent. These numbers are constants here, not parameters.
   **Stated limits; the interface must say them, and a person agrees to them by sharing with that group:**
   * A person who stops sharing or is absent in a week changes the total by their hours, rounded, so comparing two weeks shows about what they contribute. Rounding hides small differences, not large ones: 3300 against 2400 for someone with 700.
-  * A member who changes their own capacity in small steps can find a rounding edge and so learn the exact sum of the others. That is the group's sum, not one person's, unless all the others are their own accounts.
+  * A member who changes their own capacity in small steps can find a rounding edge and so learn the exact sum of the others in a week. Doing that in two weeks gives **the exact hours of someone absent in one of them** (run: 777). Rounding therefore does not protect against a member who sets out to do this; sharing with a group means trusting its members.
   * A one-minute change at a rounding edge moves the total by a whole step.
   * An attacker who fills a group with their own accounts, which can agree to share, gets close to one person's hours.
 * The RPC server must refuse `Capacities` until the transport knows the caller (contract header). Told to thread 3.
 
 ### Needs and offers
 State pattern for both. `covered` = sum of accepted offers, and the need becomes `covered` when that reaches `quantity`, and goes back to `open` when it falls below. Offers on a closed need are refused. Accepting an offer that names a resource, on a need with a time, makes a confirmed reservation in the same lock and stores its id; if that is not free, nothing changes. Withdrawing or declining an accepted offer cancels its reservation. Such a reservation cannot be cancelled directly, and a need's time cannot change while an offer is accepted. The offer is saved before its reservation changes; a repeated `decide` settles what a crash left unfinished. A need's holder for that reservation is its `subject`.
+
+### Open points
+* A fault while accepting an offer, followed by another action on that reservation and then a retried `decide`, can leave the offer accepted with its reservation cancelled, and the need covered. It needs a fault plus an intervention; the retry should detect it. Not fixed in 0.1.0.
 
 ### Feed
 `subscribe` over the store's change feed: resources, reservations, needs, offers. Capacity types never arrive, because they are unlogged; tested.
