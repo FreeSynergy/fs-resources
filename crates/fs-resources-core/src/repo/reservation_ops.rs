@@ -3,7 +3,7 @@
 //! Pattern: State (use) — every change of state goes through `reservation_next`; confirming checks
 //! the sweep. The caller holds the write lock (see `provide_reservations`).
 
-use fs_store::{ObjectId, Query, Timestamp};
+use fs_objects::{ObjectId, Query, Timestamp};
 
 use super::handle::ResourceRepo;
 use crate::error::{Error, Result};

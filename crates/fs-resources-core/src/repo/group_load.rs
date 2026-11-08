@@ -13,7 +13,7 @@
 use std::collections::BTreeSet;
 
 use chrono::{Datelike, NaiveTime, Weekday};
-use fs_store::{ObjectId, Query, Timestamp};
+use fs_objects::{ObjectId, Query, Timestamp};
 
 use super::consts::{GROUP_ROUND, MAX_WEEKS, MIN_SHARING};
 use super::handle::ResourceRepo;

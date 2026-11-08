@@ -3,8 +3,8 @@
 mod common;
 
 use common::{cap, person, setup, t};
-use fs_store::traits::{ObjectQuery, UnloggedObjects};
-use fs_store::{ObjectId, Query, Store, TursoStore};
+use fs_objects::traits::{ObjectQuery, UnloggedObjects};
+use fs_objects::{ObjectId, Query, Store, TursoStore};
 
 const WEEK: i64 = 168;
 

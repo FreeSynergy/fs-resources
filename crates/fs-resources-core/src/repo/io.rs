@@ -4,7 +4,7 @@
 //! index fields. Public records go through the logged store; private ones through
 //! `UnloggedObjects`, with no actor and a fixed time, and are read back the same way.
 
-use fs_store::{Envelope, ObjectId, Query, StoredObject};
+use fs_objects::{Envelope, ObjectId, Query, StoredObject};
 
 use super::consts::{AS2_TYPE, CONTEXT, EPOCH};
 use super::handle::ResourceRepo;

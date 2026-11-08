@@ -3,7 +3,7 @@
 //! Pattern: Specification — a confirmed reservation holds `quantity - done` for `[from, to)`; the
 //! hold of material has no end, because what is used on Monday is gone on Tuesday.
 
-use fs_store::Timestamp;
+use fs_objects::Timestamp;
 
 use crate::model::{Reservation, ReservationState, ResourceKind};
 

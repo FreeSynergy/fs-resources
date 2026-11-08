@@ -3,7 +3,7 @@
 //! Pattern: Repository (interface) + Template method + Null Object — as [`Items`](super::Items).
 
 use async_trait::async_trait;
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 
 use crate::error::Result;
 use crate::model::{Cursor, Need, Offer, Page};

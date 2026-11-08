@@ -3,7 +3,7 @@
 //! Pattern: Repository (private) — every record is the caller's own and is written without the
 //! log. A record of another person answers `Unknown`, exactly like an id that does not exist.
 
-use fs_store::{ObjectId, Query, Timestamp};
+use fs_objects::{ObjectId, Query, Timestamp};
 
 use super::handle::ResourceRepo;
 use super::reservation_ops::check_range;

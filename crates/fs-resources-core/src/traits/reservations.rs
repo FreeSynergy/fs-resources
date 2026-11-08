@@ -4,7 +4,7 @@
 //! reads are required, writes default to an explicit `Unsupported`.
 
 use async_trait::async_trait;
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 
 use crate::error::Result;
 use crate::model::{Cursor, FreePeriod, Page, Reservation};

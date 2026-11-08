@@ -4,7 +4,7 @@
 //! ends at once with `done` = what was used; the stock is derived from that (see `stock`), so
 //! the only write is the reservation and a failed `finish` changes nothing.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::ResourceRepo;
 use crate::error::{Error, Result};

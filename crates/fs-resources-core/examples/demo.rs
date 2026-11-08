@@ -4,8 +4,8 @@
 
 use std::sync::Arc;
 
+use fs_objects::{ObjectId, Timestamp, TursoStore};
 use fs_resources_core::{Capacity, Error, ResourceKind, ResourceRepo};
-use fs_store::{ObjectId, Timestamp, TursoStore};
 
 fn hours(h: i64) -> Timestamp {
     Timestamp::from_timestamp(1_772_409_600 + h * 3600, 0).expect("a valid time")

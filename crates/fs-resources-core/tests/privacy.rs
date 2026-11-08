@@ -3,9 +3,9 @@
 mod common;
 
 use common::{cap, person, repo_for, setup, t};
+use fs_objects::traits::UnloggedObjects;
+use fs_objects::{ActivityFilter, ObjectId, Store};
 use fs_resources_core::{AllocationState, Error, Load, WRITABLE_TYPES};
-use fs_store::traits::UnloggedObjects;
-use fs_store::{ActivityFilter, ObjectId, Store};
 
 const WEEK: i64 = 168;
 

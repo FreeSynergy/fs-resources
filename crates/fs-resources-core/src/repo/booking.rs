@@ -3,7 +3,7 @@
 //! Pattern: Specification (use) — loads the confirmed reservations of a resource and hands them to
 //! the pure sweep. Callers hold the write lock across this read and their write.
 
-use fs_store::{ObjectId, Query};
+use fs_objects::{ObjectId, Query};
 
 use super::handle::ResourceRepo;
 use crate::error::{Error, Result};

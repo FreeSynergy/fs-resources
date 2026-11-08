@@ -3,8 +3,8 @@
 mod common;
 
 use common::{cap, person, repo_for, setup, t};
+use fs_objects::ObjectId;
 use fs_resources_core::Error;
-use fs_store::ObjectId;
 
 const WEEK: i64 = 168;
 

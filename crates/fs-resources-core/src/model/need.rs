@@ -2,7 +2,7 @@
 //!
 //! Pattern: Value object — plain data; the transitions live in `state`.
 
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 use serde::{Deserialize, Serialize};
 
 use super::record::Record;

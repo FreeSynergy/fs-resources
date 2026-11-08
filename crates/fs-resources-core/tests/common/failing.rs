@@ -4,8 +4,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
-use fs_store::traits::{ChangeFeed, ObjectQuery, ObjectRepository, UnloggedObjects};
-use fs_store::{Activity, Error, LogEntry, ObjectId, Query, Result, StoredObject, TursoStore};
+use fs_objects::traits::{ChangeFeed, ObjectQuery, ObjectRepository, UnloggedObjects};
+use fs_objects::{Activity, Error, LogEntry, ObjectId, Query, Result, StoredObject, TursoStore};
 use tokio::sync::broadcast;
 
 /// Wraps a real store; every write is counted and the chosen one fails before it reaches the store.

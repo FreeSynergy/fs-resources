@@ -3,8 +3,8 @@
 mod common;
 
 use common::{ask, make, person, setup, stores};
+use fs_objects::ObjectId;
 use fs_resources_core::ResourceKind;
-use fs_store::ObjectId;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn two_actors_cannot_both_confirm_the_same_single_tent() {

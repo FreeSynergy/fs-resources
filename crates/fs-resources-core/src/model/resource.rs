@@ -3,7 +3,7 @@
 //! Pattern: Value object — plain data. `quantity` is how many exist now; for material it is the
 //! stock, which only `finish` lowers.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde::{Deserialize, Serialize};
 
 use super::record::Record;

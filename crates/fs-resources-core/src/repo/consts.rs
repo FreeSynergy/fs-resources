@@ -3,7 +3,7 @@
 //! Pattern: Registry (constants) — context, media type, the types the hub may be told about, and
 //! the fixed numbers of the rules, in one place.
 
-use fs_store::Timestamp;
+use fs_objects::Timestamp;
 
 /// `context` of all objects of this program.
 pub const CONTEXT: &str = "resources";

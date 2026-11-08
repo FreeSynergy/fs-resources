@@ -1,7 +1,7 @@
 //! `fs-resources-core`: program core of FreeSynergy resources (no GUI, no capnp server yet).
 //!
 //! What we have (things, rooms, material), who has time (capacity), what we need and who offers it.
-//! Objects are stored through `fs-store` with their own members in the `fs:` namespace (ADR 0014,
+//! Objects are stored through `fs-objects` with their own members in the `fs:` namespace (ADR 0014,
 //! 0020, 0050). A person's capacity, allocations and shares are private: written without the
 //! activity log, readable only by that person, and a group sees rounded totals from at least five
 //! people who agreed. Start with [`ResourceRepo`] and the traits [`Items`], [`Reservations`],

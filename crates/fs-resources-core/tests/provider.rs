@@ -7,11 +7,11 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use common::{Roster, setup};
 use fs_interfaces::Capabilities;
+use fs_objects::{ObjectId, Timestamp};
 use fs_resources_core::{
     Allocation, Capacities, Capacity, Cursor, Error, FreePeriod, Items, Load, Need, Needs, Offer,
     Page, Reservation, Reservations, Resource, ResourceFilter, ResourceKind, Result,
 };
-use fs_store::{ObjectId, Timestamp};
 
 /// Every capability id named in `resources.capnp` (v0.20.0).
 const CONTRACT: [&str; 18] = [

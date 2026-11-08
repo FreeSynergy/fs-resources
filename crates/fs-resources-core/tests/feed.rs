@@ -6,10 +6,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use common::{ME, cap, make, person, repo_for, setup, t};
+use fs_objects::ObjectId;
 use fs_resources_core::{
     EntityKind, ResourceChange, ResourceEntity, ResourceFeed, ResourceKind, ResourceListener,
 };
-use fs_store::ObjectId;
 
 #[derive(Default)]
 struct Log(Mutex<Vec<ResourceChange>>);

@@ -4,7 +4,7 @@
 //! members live in the `fs:` namespace (no AS2 type exists for them), and read back from it. Each
 //! value says its store type, its name, whether it is private, and its index fields.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};

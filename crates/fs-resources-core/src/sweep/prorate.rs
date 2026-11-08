@@ -3,7 +3,7 @@
 //! Pattern: Specification — integer arithmetic only (`i128` microseconds), rounding always down
 //! except `round_to`, which rounds to the nearest step with half rounding up.
 
-use fs_store::Timestamp;
+use fs_objects::Timestamp;
 
 use crate::model::{Allocation, AllocationState, Capacity};
 

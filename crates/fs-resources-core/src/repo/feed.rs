@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use fs_store::{Activity, ActivityKind};
+use fs_objects::{Activity, ActivityKind};
 use tokio::sync::broadcast::error::RecvError;
 
 use super::consts::CONTEXT;

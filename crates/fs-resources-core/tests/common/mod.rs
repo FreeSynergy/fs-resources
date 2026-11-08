@@ -8,10 +8,10 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use fs_objects::{ObjectId, Timestamp, TursoStore};
 use fs_resources_core::{
     GroupLookup, Reservation, ReservationState, Resource, ResourceKind, ResourceRepo, Result,
 };
-use fs_store::{ObjectId, Timestamp, TursoStore};
 
 pub const ME: &str = "https://example.org/people/me";
 

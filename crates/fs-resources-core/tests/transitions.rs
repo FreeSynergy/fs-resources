@@ -3,8 +3,8 @@
 mod common;
 
 use common::{ME, ask, hold, make, setup, t};
+use fs_objects::ObjectId;
 use fs_resources_core::{Error, ReservationState, ResourceKind, ResourceRepo};
-use fs_store::ObjectId;
 
 fn illegal<T: std::fmt::Debug>(r: Result<T, Error>, from: &str) {
     match r {

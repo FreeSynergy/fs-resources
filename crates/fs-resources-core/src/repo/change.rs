@@ -4,7 +4,7 @@
 //! checked against the other holds with its new values *instead of* its old ones, in a single write,
 //! so it keeps what it holds or nothing changes.
 
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 
 use super::handle::ResourceRepo;
 use super::reservation_ops::check_range;

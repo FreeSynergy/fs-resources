@@ -5,10 +5,10 @@ mod common;
 use std::sync::Arc;
 
 use common::{Roster, Stores, cap, person, repo_for, setup, t};
+use fs_objects::traits::UnloggedObjects;
+use fs_objects::{Envelope, ObjectId, StoredObject, Timestamp};
 use fs_resources_core::model::{Record, document};
 use fs_resources_core::{Error, GroupShare, ResourceRepo};
-use fs_store::traits::UnloggedObjects;
-use fs_store::{Envelope, ObjectId, StoredObject, Timestamp};
 
 const WEEK: i64 = 168;
 

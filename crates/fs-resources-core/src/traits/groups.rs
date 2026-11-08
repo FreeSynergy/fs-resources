@@ -4,7 +4,7 @@
 //! programs together implements this trait over the groups program (effective membership).
 
 use async_trait::async_trait;
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use crate::error::Result;
 

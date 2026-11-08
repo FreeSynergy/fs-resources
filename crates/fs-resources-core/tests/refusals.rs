@@ -3,8 +3,8 @@
 mod common;
 
 use common::{ME, ask, hold, make, person, setup, t};
+use fs_objects::ObjectId;
 use fs_resources_core::{Capacity, Error, ResourceKind};
-use fs_store::ObjectId;
 
 fn invalid<T: std::fmt::Debug>(r: Result<T, Error>) {
     assert!(matches!(r, Err(Error::Invalid(_))), "{r:?}");

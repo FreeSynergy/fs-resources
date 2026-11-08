@@ -4,7 +4,7 @@
 //! them to the pure pro rata functions. Private to this crate: callers outside ask only for
 //! themselves (`Capacities::load`) or for a group total in whole weeks.
 
-use fs_store::{Query, Timestamp};
+use fs_objects::{Query, Timestamp};
 
 use super::handle::ResourceRepo;
 use crate::error::Result;

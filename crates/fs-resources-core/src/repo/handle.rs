@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use fs_store::traits::{ChangeFeed, ObjectQuery, ObjectRepository, UnloggedObjects};
+use fs_objects::traits::{ChangeFeed, ObjectQuery, ObjectRepository, UnloggedObjects};
 use tokio::sync::Mutex;
 
 use crate::traits::{Capacities, GroupLookup, Items, Needs, Reservations};

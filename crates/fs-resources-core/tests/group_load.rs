@@ -5,8 +5,8 @@ mod common;
 use std::sync::Arc;
 
 use common::{Roster, cap, person, repo_for, setup, t};
+use fs_objects::ObjectId;
 use fs_resources_core::{Error, GroupLoad, Load, MIN_SHARING, ResourceRepo};
-use fs_store::ObjectId;
 
 const WEEK: i64 = 168;
 /// Capacity of the five people, a week each: 1595 in all, which rounds to 1500 (steps of 300).

@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use tokio::task::JoinHandle;
 
 /// Which kind of object changed.

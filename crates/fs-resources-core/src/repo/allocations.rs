@@ -3,7 +3,7 @@
 //! Pattern: State (use) — every change goes through `allocation_next`. The person answers, the
 //! proposer withdraws; anyone else is told `Unknown`, as for an id that does not exist.
 
-use fs_store::{ObjectId, Query, Timestamp};
+use fs_objects::{ObjectId, Query, Timestamp};
 
 use super::handle::ResourceRepo;
 use super::reservation_ops::check_range;

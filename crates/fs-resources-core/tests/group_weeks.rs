@@ -5,8 +5,8 @@ mod common;
 use std::sync::Arc;
 
 use common::{Roster, Stores, cap, person, repo_for, setup, t};
+use fs_objects::ObjectId;
 use fs_resources_core::{Error, GROUP_ROUND, GroupLoad, Load, ResourceRepo};
-use fs_store::ObjectId;
 
 const WEEK: i64 = 168;
 

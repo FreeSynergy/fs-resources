@@ -2,7 +2,7 @@
 //!
 //! Pattern: Value object — plain data; the state rules live in `state`, the arithmetic in `sweep`.
 
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 use serde::{Deserialize, Serialize};
 
 use super::record::Record;

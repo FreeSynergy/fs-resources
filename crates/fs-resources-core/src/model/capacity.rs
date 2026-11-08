@@ -2,7 +2,7 @@
 //!
 //! Pattern: Value object — plain data. All three stored kinds are private ([`Record::PRIVATE`]).
 
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 use serde::{Deserialize, Serialize};
 
 use super::record::Record;

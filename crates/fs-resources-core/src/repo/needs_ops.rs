@@ -4,7 +4,7 @@
 //! and down), and `settle` turns it into the state: `covered` when it reaches the quantity, `open`
 //! again when it falls below.
 
-use fs_store::{ObjectId, Query, Timestamp};
+use fs_objects::{ObjectId, Query, Timestamp};
 
 use super::handle::ResourceRepo;
 use super::reservation_ops::check_range;

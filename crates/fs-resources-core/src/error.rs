@@ -5,7 +5,7 @@
 //! free (`NotFree`), a step the state does not allow (`InvalidTransition`), and `Unknown`, the one
 //! answer for a private record that is missing *or* belongs to someone else.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 /// Result of every fallible operation of this crate.
 pub type Result<T> = std::result::Result<T, Error>;
@@ -15,7 +15,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     /// The object store failed.
     #[error("object store: {0}")]
-    Store(#[from] fs_store::Error),
+    Store(#[from] fs_objects::Error),
     /// Stored JSON could not be read or written.
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),

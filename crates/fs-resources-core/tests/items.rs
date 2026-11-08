@@ -43,7 +43,7 @@ async fn create_get_and_edit() {
 async fn the_iri_and_envelope_follow_the_program_rules() {
     let (repo, store) = setup().await;
     let r = make(&repo, ResourceKind::Thing, 1).await;
-    use fs_store::Store;
+    use fs_objects::Store;
     let o = store.get(r.id).await.unwrap().unwrap();
     assert_eq!(o.envelope.object_type, "Resource");
     assert_eq!(o.envelope.context.as_deref(), Some("resources"));

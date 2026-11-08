@@ -3,7 +3,7 @@
 //! Pattern: Specification (sweep) — cut the asked range at every start and end of a hold, count
 //! what is held in each piece, and merge neighbours that have the same free quantity.
 
-use fs_store::Timestamp;
+use fs_objects::Timestamp;
 
 use super::hold::Hold;
 use crate::model::FreePeriod;

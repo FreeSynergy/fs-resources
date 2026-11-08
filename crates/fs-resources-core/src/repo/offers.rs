@@ -6,7 +6,7 @@
 //! `confirm`. The order is reservation, offer, need: a crash leaves at worst a hold that no offer
 //! refers to (it can be cancelled), never an accepted offer without its hold.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::ResourceRepo;
 use crate::error::{Error, Result};

@@ -4,7 +4,7 @@
 //! Another person's record answers exactly like an unknown id.
 
 use async_trait::async_trait;
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 
 use crate::error::Result;
 use crate::model::{Allocation, Capacity, GroupLoad, Load};

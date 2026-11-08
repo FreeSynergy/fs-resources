@@ -4,7 +4,7 @@
 //! same concern.
 
 use async_trait::async_trait;
-use fs_store::{ObjectId, Timestamp};
+use fs_objects::{ObjectId, Timestamp};
 
 use super::handle::ResourceRepo;
 use crate::error::Result;

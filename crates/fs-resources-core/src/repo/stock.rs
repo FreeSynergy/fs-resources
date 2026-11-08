@@ -6,7 +6,7 @@
 //! Ended reservations of material therefore must not vanish unnoticed: they are only ever deleted
 //! together with their resource.
 
-use fs_store::{ObjectId, Query};
+use fs_objects::{ObjectId, Query};
 
 use super::handle::ResourceRepo;
 use crate::error::Result;
