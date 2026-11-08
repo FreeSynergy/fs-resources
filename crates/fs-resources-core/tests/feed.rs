@@ -1,4 +1,5 @@
 //! The feed carries resources, reservations, needs and offers, and never anything private.
+#![allow(clippy::items_after_statements)] // tests: a local `use` next to its use reads clearer
 
 mod common;
 

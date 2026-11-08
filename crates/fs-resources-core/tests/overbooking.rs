@@ -16,7 +16,11 @@ async fn two_confirms_that_together_exceed_the_quantity_run_concurrently_and_one
         c1.reservations().confirm(a.id),
         c2.reservations().confirm(b.id)
     );
-    assert_eq!(ra.is_ok() as u8 + rb.is_ok() as u8, 1, "{ra:?} {rb:?}");
+    assert_eq!(
+        u8::from(ra.is_ok()) + u8::from(rb.is_ok()),
+        1,
+        "{ra:?} {rb:?}"
+    );
     let refused = ra.err().or(rb.err()).unwrap();
     assert!(matches!(refused, Error::NotFree { wanted: 3, free: 2 }));
     let free = repo

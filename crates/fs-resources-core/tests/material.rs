@@ -175,7 +175,7 @@ async fn the_stock_is_derived_and_set_quantity_works_on_the_shown_value() {
     assert_eq!(e.quantity, 9);
     assert_eq!(
         repo.items()
-            .list(&Default::default(), None)
+            .list(&fs_resources_core::ResourceFilter::default(), None)
             .await
             .unwrap()
             .items[0]

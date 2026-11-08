@@ -1,4 +1,5 @@
 //! A person's capacity belongs to that person: nobody else reads it, and nothing leaves the store.
+#![allow(clippy::assert_is_empty, clippy::many_single_char_names)] // tests: plain `is_empty()` asserts read clearer than typed empty comparisons; tests: short bindings (a, b, x, y) are the clear names here
 
 mod common;
 

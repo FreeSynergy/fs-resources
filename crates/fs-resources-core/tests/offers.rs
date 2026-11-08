@@ -1,4 +1,5 @@
 //! Offers: the reservation an accepted offer makes, and what undoes it.
+#![allow(clippy::assert_is_empty)] // tests: plain `is_empty()` asserts read clearer than typed empty comparisons
 
 mod common;
 

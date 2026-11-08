@@ -1,4 +1,5 @@
 //! Items: create, edit, list with filters and paging.
+#![allow(clippy::items_after_statements)] // tests: a local `use` next to its use reads clearer
 
 mod common;
 

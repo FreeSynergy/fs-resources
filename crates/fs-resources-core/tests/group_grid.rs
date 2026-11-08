@@ -19,7 +19,11 @@ async fn group(s: &Stores, n: usize, sharing: usize, mpw: u32) -> (ObjectId, Res
     for (i, p) in people.iter().enumerate() {
         let r = repo_for(s, p);
         r.capacity()
-            .set(cap(mpw + i as u32, -1000 * WEEK, 1000 * WEEK))
+            .set(cap(
+                mpw + u32::try_from(i).unwrap(),
+                -1000 * WEEK,
+                1000 * WEEK,
+            ))
             .await
             .unwrap();
         if i < sharing {

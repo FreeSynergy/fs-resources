@@ -74,7 +74,10 @@ async fn a_stuck_delete_marker_neither_repeats_a_row_nor_ends_a_page_early() {
         loop {
             let p = repo
                 .items()
-                .list(&Default::default(), cursor.as_ref())
+                .list(
+                    &fs_resources_core::ResourceFilter::default(),
+                    cursor.as_ref(),
+                )
                 .await
                 .unwrap();
             pages.push(p.items.len());

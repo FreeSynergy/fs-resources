@@ -25,7 +25,7 @@ async fn two_needs_cannot_both_accept_the_same_single_tent_for_one_weekend() {
         c1.needs().decide(o1.id, true),
         c2.needs().decide(o2.id, true)
     );
-    assert_eq!(a.is_ok() as u8 + b.is_ok() as u8, 1, "{a:?} {b:?}");
+    assert_eq!(u8::from(a.is_ok()) + u8::from(b.is_ok()), 1, "{a:?} {b:?}");
     let loser = a.err().or(b.err()).unwrap();
     assert!(matches!(loser, Error::NotFree { wanted: 1, free: 0 }));
     let held = repo
