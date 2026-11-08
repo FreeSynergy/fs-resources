@@ -8,7 +8,7 @@ What is different here: your own capacity, meaning your time, belongs to you. On
 
 ## What it can do today
 
-Latest tag: `v0.2.0`.
+Latest tag: `v0.0.1`.
 
 - Things, rooms and material, with stock that is worked out from what has been finished.
 - Reservations that cannot overbook; finishing a reservation frees the thing or uses up the material.
