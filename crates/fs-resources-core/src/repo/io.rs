@@ -71,7 +71,7 @@ impl ResourceRepo {
     pub(super) async fn find<T: Record>(&self, q: Query) -> Result<Vec<T>> {
         let q = q.of_type(T::TYPE).in_context(CONTEXT);
         let found = if T::PRIVATE {
-            self.private_reads.query(&q).await?
+            self.private.query_unlogged(&q, &[T::TYPE]).await?
         } else {
             self.reads.query(&q).await?
         };

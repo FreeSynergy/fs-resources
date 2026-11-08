@@ -17,7 +17,6 @@ pub struct ResourceRepo {
     pub(super) objects: Arc<dyn ObjectRepository>,
     pub(super) reads: Arc<dyn ObjectQuery>,
     pub(super) private: Arc<dyn UnloggedObjects>,
-    pub(super) private_reads: Arc<dyn ObjectQuery>,
     pub(super) events: Arc<dyn ChangeFeed>,
     pub(super) groups: Option<Arc<dyn GroupLookup>>,
     pub(super) actor: String,
@@ -35,13 +34,12 @@ impl ResourceRepo {
     pub fn new<S, P>(store: Arc<S>, private: Arc<P>, actor: impl Into<String>) -> Self
     where
         S: ObjectRepository + ObjectQuery + ChangeFeed + 'static,
-        P: UnloggedObjects + ObjectQuery + 'static,
+        P: UnloggedObjects + 'static,
     {
         Self {
             objects: store.clone(),
             reads: store.clone(),
-            private: private.clone(),
-            private_reads: private,
+            private,
             events: store,
             groups: None,
             actor: actor.into(),
