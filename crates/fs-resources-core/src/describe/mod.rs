@@ -5,6 +5,10 @@
 
 mod build;
 mod commands;
+mod commands_needs;
+mod commands_reservation;
+mod commands_resource;
+mod commands_time;
 mod fields;
 mod spec;
 

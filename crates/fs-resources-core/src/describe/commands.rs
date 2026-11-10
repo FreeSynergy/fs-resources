@@ -11,21 +11,22 @@
 //! Lists are `find` with paging; a command on one record has a reference to the type itself as input
 //! (strategy decision of 2026-11-10). `change` is partial: a missing field stays, an empty one clears.
 
-use fs_types::BasicType;
-use fs_types::CommandKind as K;
+use std::sync::LazyLock;
 
-use super::fields::{
-    ALLOCATION, ANY, CAPACITY, KINDS, NEED, OFFER, PERSON, PLACE, RESERVATION, RESOURCE, TASK,
-};
-use super::spec::{CommandSpec, FieldSpec, choice, reference, text, when};
+use super::commands_needs::NEED_COMMANDS;
+use super::commands_reservation::RESERVATION_COMMANDS;
+use super::commands_resource::RESOURCE_COMMANDS;
+use super::commands_time::TIME_COMMANDS;
+use super::spec::{CommandSpec, FieldSpec, reference, text};
 
 /// The requirement rows of `requirements.md` and how the core stands to each (see `requirements.rs`).
-const R_FORMS: &str = "Generate list and form views from a data type description";
-const R_LINK: &str = "Link records of one area to another by interface, not by copy";
-const R_STOCK: &str =
+pub(super) const R_FORMS: &str = "Generate list and form views from a data type description";
+pub(super) const R_LINK: &str = "Link records of one area to another by interface, not by copy";
+pub(super) const R_STOCK: &str =
     "Stock of consumables with minimum amount and due date, missing items go to a list";
-const R_CHECK: &str = "Check-out and check-in of an item with status labels deciding assignability";
-const R_CLASS: &str =
+pub(super) const R_CHECK: &str =
+    "Check-out and check-in of an item with status labels deciding assignability";
+pub(super) const R_CLASS: &str =
     "Item classes with different rules: tagged, interchangeable, part of another item, used up";
 
 /// The requirement rows that are no command of a data type (the generated frontend meets them).
@@ -33,383 +34,32 @@ pub const FRONTEND_REQUIREMENTS: &[&str] = &[R_FORMS];
 /// The requirement rows a command stands for.
 pub const COMMAND_REQUIREMENTS: &[&str] = &[R_LINK, R_STOCK, R_CHECK, R_CLASS];
 
-const CURSOR: FieldSpec = text("cursor");
-const NEXT: FieldSpec = text("next");
+pub(super) const CURSOR: FieldSpec = text("cursor");
+pub(super) const NEXT: FieldSpec = text("next");
 
-const fn id(of: &'static str) -> FieldSpec {
+pub(super) const fn id(of: &'static str) -> FieldSpec {
     reference("id", of).req()
 }
 
-const fn found(name: &'static str, of: &'static str) -> FieldSpec {
+pub(super) const fn found(name: &'static str, of: &'static str) -> FieldSpec {
     reference(name, of).many()
 }
 
-const SCOPE_NEEDS: &[&str] = &["all", "open"];
-const WHO_ALLOC: &[&str] = &["mine", "proposed"];
-const ON_OFF: &[&str] = &["on", "off"];
-const CLASSES: &[&str] = &["tagged", "interchangeable", "part", "consumable"];
+pub(super) const SCOPE_NEEDS: &[&str] = &["all", "open"];
+pub(super) const WHO_ALLOC: &[&str] = &["mine", "proposed"];
+pub(super) const ON_OFF: &[&str] = &["on", "off"];
+pub(super) const CLASSES: &[&str] = &["tagged", "interchangeable", "part", "consumable"];
 
-/// Every command of every type.
-pub const COMMANDS: &[CommandSpec] = &[
-    // ---------------------------------------------------------------- Resource
-    CommandSpec::done(
-        RESOURCE,
-        "create",
-        K::Create,
-        "resource.create",
-        &[
-            choice("kind", KINDS).req(),
-            text("name").req(),
-            text("quantity").req(),
-            text("unit"),
-            reference("owner", PERSON),
-            reference("place", PLACE),
-        ],
-        &[reference("id", RESOURCE).req()],
-    ),
-    CommandSpec::done(RESOURCE, "change", K::Change, "resource.edit", &[], &[]),
-    CommandSpec::done(
-        RESOURCE,
-        "find",
-        K::Find,
-        "resource.read",
-        &[
-            text("term"),
-            choice("kind", KINDS),
-            reference("owner", PERSON),
-            reference("place", PLACE),
-            text("label"),
-            CURSOR,
-        ],
-        &[found("items", RESOURCE), NEXT],
-    ),
-    CommandSpec::done(
-        RESOURCE,
-        "delete",
-        K::Delete,
-        "resource.delete",
-        &[id(RESOURCE)],
-        &[],
-    ),
-    CommandSpec::done(
-        RESOURCE,
-        "free",
-        K::Other,
-        "reservation.read",
-        &[id(RESOURCE), when("from").req(), when("to").req()],
-        &[when("from").many(), when("to").many(), text("free").many()],
-    ),
-    CommandSpec::missing(
-        RESOURCE,
-        "setMinimum",
-        K::Other,
-        R_STOCK,
-        &[
-            id(RESOURCE),
-            text("minimum").req(),
-            FieldSpec::new("dueDate", BasicType::Date),
-        ],
-        &[],
-    ),
-    CommandSpec::missing(
-        RESOURCE,
-        "missing",
-        K::Find,
-        R_STOCK,
-        &[CURSOR],
-        &[found("items", RESOURCE), NEXT],
-    ),
-    CommandSpec::missing(
-        RESOURCE,
-        "checkOut",
-        K::Other,
-        R_CHECK,
-        &[id(RESOURCE), reference("holder", PERSON).req(), when("to")],
-        &[reference("reservation", RESERVATION)],
-    ),
-    CommandSpec::missing(RESOURCE, "checkIn", K::Other, R_CHECK, &[id(RESOURCE)], &[]),
-    CommandSpec::missing(
-        RESOURCE,
-        "setStatus",
-        K::Other,
-        R_CHECK,
-        &[id(RESOURCE), text("status").req()],
-        &[],
-    ),
-    CommandSpec::missing(
-        RESOURCE,
-        "setClass",
-        K::Other,
-        R_CLASS,
-        &[id(RESOURCE), choice("class", CLASSES).req()],
-        &[],
-    ),
-    CommandSpec::missing(
-        RESOURCE,
-        "link",
-        K::Other,
-        R_LINK,
-        &[id(RESOURCE), reference("target", ANY).req()],
-        &[],
-    ),
-    // ---------------------------------------------------------------- Reservation
-    CommandSpec::done(
-        RESERVATION,
-        "request",
-        K::Create,
-        "reservation.request",
-        &[
-            reference("resource", RESOURCE).req(),
-            text("quantity").req(),
-            when("from").req(),
-            when("to").req(),
-            reference("holder", PERSON).req(),
-            reference("subject", TASK),
-            text("note"),
-        ],
-        &[reference("id", RESERVATION).req()],
-    ),
-    CommandSpec::done(
-        RESERVATION,
-        "change",
-        K::Change,
-        "reservation.request",
-        &[],
-        &[],
-    ),
-    CommandSpec::done(
-        RESERVATION,
-        "find",
-        K::Find,
-        "reservation.read",
-        &[
-            reference("resource", RESOURCE),
-            reference("holder", PERSON),
-            when("from"),
-            when("to"),
-            CURSOR,
-        ],
-        &[found("items", RESERVATION), NEXT],
-    ),
-    CommandSpec::done(
-        RESERVATION,
-        "confirm",
-        K::Other,
-        "reservation.decide",
-        &[id(RESERVATION)],
-        &[],
-    ),
-    CommandSpec::done(
-        RESERVATION,
-        "decline",
-        K::Other,
-        "reservation.decide",
-        &[id(RESERVATION)],
-        &[],
-    ),
-    CommandSpec::done(
-        RESERVATION,
-        "cancel",
-        K::Other,
-        "reservation.request",
-        &[id(RESERVATION)],
-        &[],
-    ),
-    CommandSpec::done(
-        RESERVATION,
-        "finish",
-        K::Other,
-        "reservation.decide",
-        &[id(RESERVATION), text("quantity").req()],
-        &[],
-    ),
-    // ---------------------------------------------------------------- Need
-    CommandSpec::done(
-        NEED,
-        "create",
-        K::Create,
-        "need.create",
-        &[
-            text("what").req(),
-            text("quantity").req(),
-            text("unit"),
-            when("from"),
-            when("to"),
-            reference("subject", TASK),
-        ],
-        &[reference("id", NEED).req()],
-    ),
-    CommandSpec::done(NEED, "change", K::Change, "need.create", &[], &[]),
-    CommandSpec::done(
-        NEED,
-        "find",
-        K::Find,
-        "need.read",
-        &[
-            reference("subject", TASK),
-            choice("scope", SCOPE_NEEDS),
-            CURSOR,
-        ],
-        &[found("items", NEED), NEXT],
-    ),
-    CommandSpec::done(NEED, "close", K::Other, "need.create", &[id(NEED)], &[]),
-    CommandSpec::done(NEED, "delete", K::Delete, "need.create", &[id(NEED)], &[]),
-    // ---------------------------------------------------------------- Offer
-    CommandSpec::done(
-        OFFER,
-        "create",
-        K::Create,
-        "offer.make",
-        &[
-            reference("need", NEED).req(),
-            reference("by", PERSON).req(),
-            text("quantity").req(),
-            reference("resource", RESOURCE),
-            text("note"),
-        ],
-        &[reference("id", OFFER).req()],
-    ),
-    CommandSpec::done(
-        OFFER,
-        "find",
-        K::Find,
-        "need.read",
-        &[reference("need", NEED), CURSOR],
-        &[found("items", OFFER), NEXT],
-    ),
-    CommandSpec::done(OFFER, "withdraw", K::Other, "offer.make", &[id(OFFER)], &[]),
-    CommandSpec::done(OFFER, "accept", K::Other, "offer.decide", &[id(OFFER)], &[]),
-    CommandSpec::done(
-        OFFER,
-        "decline",
-        K::Other,
-        "offer.decide",
-        &[id(OFFER)],
-        &[],
-    ),
-    // ---------------------------------------------------------------- Capacity (the calling person's own)
-    CommandSpec::done(
-        CAPACITY,
-        "set",
-        K::Create,
-        "capacity.set",
-        &[
-            when("from").req(),
-            when("to").req(),
-            text("minutesPerWeek").req(),
-            text("note"),
-        ],
-        &[reference("id", CAPACITY).req()],
-    ),
-    CommandSpec::done(CAPACITY, "change", K::Change, "capacity.set", &[], &[]),
-    CommandSpec::done(
-        CAPACITY,
-        "find",
-        K::Find,
-        "capacity.read",
-        &[when("from"), when("to"), CURSOR],
-        &[found("items", CAPACITY), NEXT],
-    ),
-    CommandSpec::done(
-        CAPACITY,
-        "delete",
-        K::Delete,
-        "capacity.set",
-        &[id(CAPACITY)],
-        &[],
-    ),
-    CommandSpec::done(
-        CAPACITY,
-        "load",
-        K::Other,
-        "capacity.read",
-        &[when("from").req(), when("to").req()],
-        &[text("capacityMinutes"), text("allocatedMinutes")],
-    ),
-    CommandSpec::done(
-        CAPACITY,
-        "share",
-        K::Other,
-        "capacity.share",
-        &[
-            reference("group", "Group").req(),
-            choice("share", ON_OFF).req(),
-        ],
-        &[],
-    ),
-    CommandSpec::done(
-        CAPACITY,
-        "sharedGroups",
-        K::Other,
-        "capacity.share",
-        &[],
-        &[reference("groups", "Group").many()],
-    ),
-    CommandSpec::done(
-        CAPACITY,
-        "groupLoad",
-        K::Other,
-        "capacity.group",
-        &[
-            reference("group", "Group").req(),
-            when("from").req(),
-            when("to").req(),
-        ],
-        &[
-            text("hidden"),
-            text("allocationsHidden"),
-            text("capacityMinutes"),
-            text("allocatedMinutes"),
-        ],
-    ),
-    // ---------------------------------------------------------------- Allocation
-    CommandSpec::done(
-        ALLOCATION,
-        "propose",
-        K::Create,
-        "allocation.propose",
-        &[
-            reference("person", PERSON).req(),
-            reference("subject", TASK).req(),
-            when("from").req(),
-            when("to").req(),
-            text("minutes").req(),
-        ],
-        &[reference("id", ALLOCATION).req()],
-    ),
-    CommandSpec::done(
-        ALLOCATION,
-        "find",
-        K::Find,
-        "capacity.read",
-        &[choice("scope", WHO_ALLOC), when("from"), when("to"), CURSOR],
-        &[found("items", ALLOCATION), NEXT],
-    ),
-    CommandSpec::done(
-        ALLOCATION,
-        "accept",
-        K::Other,
-        "allocation.answer",
-        &[id(ALLOCATION)],
-        &[],
-    ),
-    CommandSpec::done(
-        ALLOCATION,
-        "decline",
-        K::Other,
-        "allocation.answer",
-        &[id(ALLOCATION)],
-        &[],
-    ),
-    CommandSpec::done(
-        ALLOCATION,
-        "withdraw",
-        K::Other,
-        "allocation.propose",
-        &[id(ALLOCATION)],
-        &[],
-    ),
-];
+/// Every command of every type, in the order of the types.
+pub static COMMANDS: LazyLock<Vec<CommandSpec>> = LazyLock::new(|| {
+    [
+        RESOURCE_COMMANDS,
+        RESERVATION_COMMANDS,
+        NEED_COMMANDS,
+        TIME_COMMANDS,
+    ]
+    .concat()
+});
 
 /// The commands of one data type, in table order.
 pub fn commands_of(data_type: &str) -> impl Iterator<Item = &'static CommandSpec> + '_ {
