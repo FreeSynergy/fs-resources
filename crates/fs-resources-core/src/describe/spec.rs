@@ -37,18 +37,21 @@ impl FieldSpec {
     }
 
     /// Must be given.
+    #[must_use]
     pub const fn req(mut self) -> Self {
         self.required = true;
         self
     }
 
     /// A list of values.
+    #[must_use]
     pub const fn many(mut self) -> Self {
         self.multiple = true;
         self
     }
 
     /// A reference to `target`.
+    #[must_use]
     pub const fn to(mut self, target: &'static str) -> Self {
         self.target = target;
         self

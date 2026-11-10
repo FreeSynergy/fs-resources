@@ -30,8 +30,8 @@ impl Vals {
     }
 
     /// A number.
-    pub fn num(self, name: &str, n: impl ToString) -> Self {
-        self.put(name, n.to_string())
+    pub fn num<N: Into<u64>>(self, name: &str, n: N) -> Self {
+        self.put(name, n.into().to_string())
     }
 
     /// An optional text.

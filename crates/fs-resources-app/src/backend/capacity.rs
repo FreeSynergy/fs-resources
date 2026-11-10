@@ -40,6 +40,46 @@ pub async fn list(p: &Ports, q: &Input<'_>) -> Result<Vec<Record>, BackendError>
     Ok(mine.iter().map(|c| record(p, c)).collect())
 }
 
+/// `change`: missing = unchanged, no values = cleared; the range may not overlap another.
+async fn change(p: &Ports, i: &Input<'_>) -> Result<Outcome, BackendError> {
+    i.only(&["from", "to", "minutesPerWeek", "note"])?;
+    let id = i.need_id("id")?;
+    let (start, end) = forever();
+    let now = p
+        .capacities
+        .mine(start, end)
+        .await
+        .shown()?
+        .into_iter()
+        .find(|c| c.id == id)
+        .ok_or(BackendError::NotFound)?;
+    let next = Capacity {
+        from: if i.has("from") {
+            i.need_time("from")?
+        } else {
+            now.from
+        },
+        to: if i.has("to") {
+            i.need_time("to")?
+        } else {
+            now.to
+        },
+        minutes_per_week: if i.has("minutesPerWeek") {
+            i.need_number("minutesPerWeek")?
+        } else {
+            now.minutes_per_week
+        },
+        note: if i.has("note") {
+            i.text_or_empty("note").to_owned()
+        } else {
+            now.note.clone()
+        },
+        ..now
+    };
+    p.capacities.set(next).await.shown()?;
+    Ok(made(p.iri(id)))
+}
+
 /// Carry out one command.
 pub async fn run(p: &Ports, name: &str, i: &Input<'_>) -> Result<Outcome, BackendError> {
     match name {
@@ -58,44 +98,7 @@ pub async fn run(p: &Ports, name: &str, i: &Input<'_>) -> Result<Outcome, Backen
                 .shown()?;
             Ok(made(p.iri(saved.id)))
         }
-        "change" => {
-            i.only(&["from", "to", "minutesPerWeek", "note"])?;
-            let id = i.need_id("id")?;
-            let (start, end) = forever();
-            let now = p
-                .capacities
-                .mine(start, end)
-                .await
-                .shown()?
-                .into_iter()
-                .find(|c| c.id == id)
-                .ok_or(BackendError::NotFound)?;
-            let next = Capacity {
-                from: if i.has("from") {
-                    i.need_time("from")?
-                } else {
-                    now.from
-                },
-                to: if i.has("to") {
-                    i.need_time("to")?
-                } else {
-                    now.to
-                },
-                minutes_per_week: if i.has("minutesPerWeek") {
-                    i.need_number("minutesPerWeek")?
-                } else {
-                    now.minutes_per_week
-                },
-                note: if i.has("note") {
-                    i.text_or_empty("note").to_owned()
-                } else {
-                    now.note.clone()
-                },
-                ..now
-            };
-            p.capacities.set(next).await.shown()?;
-            Ok(made(p.iri(id)))
-        }
+        "change" => change(p, i).await,
         "delete" => {
             p.capacities.remove(i.need_id("id")?).await.shown()?;
             Ok(done())
@@ -141,8 +144,8 @@ pub async fn run(p: &Ports, name: &str, i: &Input<'_>) -> Result<Outcome, Backen
                 .await
                 .shown()?;
             Ok(Vals::new()
-                .num("hidden", l.hidden)
-                .num("allocationsHidden", l.allocations_hidden)
+                .put("hidden", l.hidden.to_string())
+                .put("allocationsHidden", l.allocations_hidden.to_string())
                 .num("capacityMinutes", l.load.capacity_minutes)
                 .num("allocatedMinutes", l.load.allocated_minutes)
                 .outcome())

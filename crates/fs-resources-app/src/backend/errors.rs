@@ -9,7 +9,7 @@ use fs_admin_frontend::BackendError;
 use fs_resources_core::Error;
 
 /// Map a core error.
-pub fn from_core(e: Error) -> BackendError {
+pub fn from_core(e: &Error) -> BackendError {
     match e {
         Error::NotFound { .. } | Error::Unknown(_) => BackendError::NotFound,
         Error::Store(_) | Error::Json(_) => BackendError::Unavailable(e.to_string()),
@@ -32,6 +32,6 @@ pub trait CoreResult<T> {
 
 impl<T> CoreResult<T> for Result<T, Error> {
     fn shown(self) -> Result<T, BackendError> {
-        self.map_err(from_core)
+        self.map_err(|e| from_core(&e))
     }
 }
