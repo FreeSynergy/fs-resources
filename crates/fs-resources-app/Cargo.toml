@@ -12,10 +12,10 @@ fs-objects = { git = "https://github.com/FreeSynergy/fs-objects", tag = "v0.0.1"
 fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11", features = ["rpc"] }
 fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11" }
 # provisional: exactly this commit until the coordinator names a tag
-fs-admin-frontend = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
-fs-components-app = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
-fs-components-fields = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
-fs-components-styles = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
+fs-admin-frontend = { git = "https://github.com/FreeSynergy/fs-components", rev = "7b47a65" }
+fs-components-app = { git = "https://github.com/FreeSynergy/fs-components", rev = "7b47a65" }
+fs-components-fields = { git = "https://github.com/FreeSynergy/fs-components", rev = "7b47a65" }
+fs-components-styles = { git = "https://github.com/FreeSynergy/fs-components", rev = "7b47a65" }
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
 

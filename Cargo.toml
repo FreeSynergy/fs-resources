@@ -14,9 +14,3 @@ rust-version = "1.89"
 blinc_app = { git = "https://github.com/FreeSynergy/blinc-app-fix", rev = "5180d4eae80034d851d98464861f098d69eceaf0" }
 blinc_layout = { git = "https://github.com/FreeSynergy/blinc-layout-fix", rev = "cb17db8111f2037473e6e02b6784628ca0dca151" }
 
-# fs-admin-frontend (rev 4688cee) still names fs-types v0.0.2 and fs-components v0.0.1 name fs-interfaces v0.0.1; the
-# program must hand it the TypeDescription of the SAME fs-types it describes with (v0.0.8). One crate, so the patch.
-# Provisional: falls away when fs-components moves to the v0.0.8 tag.
-[patch."https://github.com/FreeSynergy/fs-interfaces"]
-fs-types = { git = "https://www.github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11" }
-fs-interfaces = { git = "https://www.github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11" }
