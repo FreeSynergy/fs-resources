@@ -1,0 +1,23 @@
+[package]
+name = "fs-resources-app"
+description = "The resources program of FreeSynergy as a window: the generated Admin frontend over the type description of the core, in the window shell (ADR 0065, 0066)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-resources-core = { path = "../fs-resources-core" }
+fs-objects = { git = "https://github.com/FreeSynergy/fs-objects", tag = "v0.0.1" }
+fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11", features = ["rpc"] }
+fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11" }
+# provisional: exactly this commit until the coordinator names a tag
+fs-admin-frontend = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
+fs-components-app = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
+fs-components-fields = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
+fs-components-styles = { git = "https://github.com/FreeSynergy/fs-components", rev = "5809e89" }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }

@@ -107,37 +107,67 @@ fn the_core_reports_every_capability_a_supported_command_stands_for() {
 }
 
 #[test]
-fn every_type_has_find_for_the_list_and_record_commands_name_the_record() {
+fn every_type_has_find_and_record_commands_work_on_a_record() {
     for d in all() {
-        let find = d.commands.iter().find(|c| c.kind == CommandKind::Find);
-        assert!(find.is_some(), "{} has no find", d.name);
-        for c in d
-            .commands
-            .iter()
-            .filter(|c| matches!(c.kind, CommandKind::Change | CommandKind::Delete))
-        {
-            let id = c.input.iter().find(|f| f.name == "id");
-            let id = id.unwrap_or_else(|| panic!("{}.{} has no id", d.name, c.name));
-            assert_eq!(id.basic, BasicType::Reference);
-            assert_eq!(id.target, d.name);
-            assert!(id.required);
+        assert!(
+            d.commands.iter().any(|c| c.kind == CommandKind::Find),
+            "{} has no find",
+            d.name
+        );
+        let on_record = d.record_commands();
+        for c in &d.commands {
+            let names_itself = c
+                .input
+                .iter()
+                .any(|f| f.basic == BasicType::Reference && f.target == d.name);
+            let is_record = on_record.iter().any(|r| r.name == c.name);
+            assert_eq!(
+                is_record,
+                names_itself || matches!(c.kind, CommandKind::Change | CommandKind::Delete),
+                "{}.{}",
+                d.name,
+                c.name
+            );
+            if c.kind == CommandKind::Delete {
+                let id = c
+                    .input
+                    .iter()
+                    .find(|f| f.name == "id")
+                    .expect("delete names the record");
+                assert!(id.required && id.target == d.name);
+            }
         }
     }
 }
 
 #[test]
-fn change_commands_have_no_required_field_but_the_id() {
+fn change_is_an_edit_and_takes_no_input_of_its_own() {
     for d in all() {
         for c in d.commands.iter().filter(|c| c.kind == CommandKind::Change) {
-            assert!(
-                c.input.iter().all(|f| f.name == "id" || !f.required)
-                    || is_unsupported(&d.name, &c.name),
-                "{}.{} would force fields on a partial change",
-                d.name,
-                c.name
-            );
+            assert!(c.input.is_empty(), "{}.{}", d.name, c.name);
+            assert!(c.supported, "{}.{}", d.name, c.name);
         }
     }
+}
+
+#[test]
+fn the_wire_flag_is_the_table_flag_for_every_command() {
+    for d in all() {
+        for c in &d.commands {
+            let row = COMMANDS
+                .iter()
+                .find(|r| r.of == d.name && r.name == c.name)
+                .unwrap();
+            assert_eq!(c.supported, row.supported, "{}.{}", d.name, c.name);
+            assert_eq!(c.supported, !is_unsupported(&d.name, &c.name));
+        }
+    }
+    assert!(
+        !Resource::describe()
+            .find_command("setClass")
+            .unwrap()
+            .supported
+    );
 }
 
 fn futures_lite_block<T>(f: impl std::future::Future<Output = T>) -> T {

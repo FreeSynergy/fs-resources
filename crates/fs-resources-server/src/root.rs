@@ -63,8 +63,8 @@ impl resources::Server for ResourcesServer {
         _: resources::TypesParams,
         mut results: resources::TypesResults,
     ) -> Done {
-        let registry = registry()
-            .map_err(|e| capnp::Error::failed(format!("types.unsound: {e:?}")))?;
+        let registry =
+            registry().map_err(|e| capnp::Error::failed(format!("types.unsound: {e:?}")))?;
         results
             .get()
             .set_catalog(new_client(CatalogServer::new(registry)));

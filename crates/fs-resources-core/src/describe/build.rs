@@ -56,9 +56,10 @@ fn field(spec: &FieldSpec, label: &str) -> FieldDescription {
 
 fn command(of: &str, spec: &CommandSpec) -> CommandDescription {
     let base = format!("{}.{}", of.to_ascii_lowercase(), kebab(spec.name));
-    // SWITCH: set .supported(flag) when fs-types has it. Until then the flag stays in the table
-    // (`spec.supported`), and a backend refuses the commands that are `false`.
     let mut c = CommandDescription::new(spec.name, spec.kind, &base);
+    if !spec.supported {
+        c = c.unsupported(); // the flag of the table goes on the wire here
+    }
     for f in spec.input {
         c = c.input(field(f, &format!("{base}.{}", kebab(f.name))));
     }

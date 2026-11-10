@@ -1,0 +1,20 @@
+[package]
+name = "fs-resources"
+description = "FreeSynergy.Resources: what we have, who has time, what we need. Without arguments the window opens; `serve` runs the server (ADR 0063)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "fs-resources"
+path = "src/main.rs"
+
+[features]
+default = ["gui"]
+# The window (Blinc). Without it the binary has the server only: `cargo build --no-default-features`.
+gui = ["dep:fs-resources-app"]
+
+[dependencies]
+fs-resources-server = { path = "../fs-resources-server" }
+fs-resources-app = { path = "../fs-resources-app", optional = true }

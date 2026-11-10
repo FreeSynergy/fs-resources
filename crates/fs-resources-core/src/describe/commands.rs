@@ -6,13 +6,17 @@
 //! place and missing in another. A requirement the core does not meet yet is a row with
 //! `supported = false`; it is never left out. When the core learns it, the row changes, nothing else.
 //!
+//! A `change` has no inputs of its own: its input is an `Edit` (field path, basic type, values; missing = unchanged,
+//! empty = cleared) over the fields of the type, and the record's id travels next to it.
 //! Lists are `find` with paging; a command on one record has a reference to the type itself as input
 //! (strategy decision of 2026-11-10). `change` is partial: a missing field stays, an empty one clears.
 
 use fs_types::BasicType;
 use fs_types::CommandKind as K;
 
-use super::fields::{ALLOCATION, CAPACITY, KINDS, NEED, OFFER, RESERVATION, RESOURCE};
+use super::fields::{
+    ALLOCATION, ANY, CAPACITY, KINDS, NEED, OFFER, PERSON, PLACE, RESERVATION, RESOURCE, TASK,
+};
 use super::spec::{CommandSpec, FieldSpec, choice, reference, text, when};
 
 /// The requirement rows of `requirements.md` and how the core stands to each (see `requirements.rs`).
@@ -58,27 +62,12 @@ pub const COMMANDS: &[CommandSpec] = &[
             text("name").req(),
             text("quantity").req(),
             text("unit"),
-            reference("owner", ""),
-            reference("place", ""),
+            reference("owner", PERSON),
+            reference("place", PLACE),
         ],
         &[reference("id", RESOURCE).req()],
     ),
-    CommandSpec::done(
-        RESOURCE,
-        "change",
-        K::Change,
-        "resource.edit",
-        &[
-            id(RESOURCE),
-            text("name"),
-            text("unit"),
-            reference("owner", ""),
-            reference("place", ""),
-            FieldSpec::new("labels", BasicType::Keywords),
-            text("quantity"),
-        ],
-        &[],
-    ),
+    CommandSpec::done(RESOURCE, "change", K::Change, "resource.edit", &[], &[]),
     CommandSpec::done(
         RESOURCE,
         "find",
@@ -87,8 +76,8 @@ pub const COMMANDS: &[CommandSpec] = &[
         &[
             text("term"),
             choice("kind", KINDS),
-            reference("owner", ""),
-            reference("place", ""),
+            reference("owner", PERSON),
+            reference("place", PLACE),
             text("label"),
             CURSOR,
         ],
@@ -113,7 +102,7 @@ pub const COMMANDS: &[CommandSpec] = &[
     CommandSpec::missing(
         RESOURCE,
         "setMinimum",
-        K::Change,
+        K::Other,
         R_STOCK,
         &[
             id(RESOURCE),
@@ -135,14 +124,14 @@ pub const COMMANDS: &[CommandSpec] = &[
         "checkOut",
         K::Other,
         R_CHECK,
-        &[id(RESOURCE), reference("holder", "").req(), when("to")],
+        &[id(RESOURCE), reference("holder", PERSON).req(), when("to")],
         &[reference("reservation", RESERVATION)],
     ),
     CommandSpec::missing(RESOURCE, "checkIn", K::Other, R_CHECK, &[id(RESOURCE)], &[]),
     CommandSpec::missing(
         RESOURCE,
         "setStatus",
-        K::Change,
+        K::Other,
         R_CHECK,
         &[id(RESOURCE), text("status").req()],
         &[],
@@ -150,7 +139,7 @@ pub const COMMANDS: &[CommandSpec] = &[
     CommandSpec::missing(
         RESOURCE,
         "setClass",
-        K::Change,
+        K::Other,
         R_CLASS,
         &[id(RESOURCE), choice("class", CLASSES).req()],
         &[],
@@ -160,7 +149,7 @@ pub const COMMANDS: &[CommandSpec] = &[
         "link",
         K::Other,
         R_LINK,
-        &[id(RESOURCE), reference("target", "").req()],
+        &[id(RESOURCE), reference("target", ANY).req()],
         &[],
     ),
     // ---------------------------------------------------------------- Reservation
@@ -174,8 +163,8 @@ pub const COMMANDS: &[CommandSpec] = &[
             text("quantity").req(),
             when("from").req(),
             when("to").req(),
-            reference("holder", "").req(),
-            reference("subject", ""),
+            reference("holder", PERSON).req(),
+            reference("subject", TASK),
             text("note"),
         ],
         &[reference("id", RESERVATION).req()],
@@ -185,7 +174,7 @@ pub const COMMANDS: &[CommandSpec] = &[
         "change",
         K::Change,
         "reservation.request",
-        &[id(RESERVATION), text("quantity"), when("from"), when("to")],
+        &[],
         &[],
     ),
     CommandSpec::done(
@@ -195,7 +184,7 @@ pub const COMMANDS: &[CommandSpec] = &[
         "reservation.read",
         &[
             reference("resource", RESOURCE),
-            reference("holder", ""),
+            reference("holder", PERSON),
             when("from"),
             when("to"),
             CURSOR,
@@ -246,32 +235,18 @@ pub const COMMANDS: &[CommandSpec] = &[
             text("unit"),
             when("from"),
             when("to"),
-            reference("subject", ""),
+            reference("subject", TASK),
         ],
         &[reference("id", NEED).req()],
     ),
-    CommandSpec::done(
-        NEED,
-        "change",
-        K::Change,
-        "need.create",
-        &[
-            id(NEED),
-            text("what"),
-            text("quantity"),
-            text("unit"),
-            when("from"),
-            when("to"),
-        ],
-        &[],
-    ),
+    CommandSpec::done(NEED, "change", K::Change, "need.create", &[], &[]),
     CommandSpec::done(
         NEED,
         "find",
         K::Find,
         "need.read",
         &[
-            reference("subject", ""),
+            reference("subject", TASK),
             choice("scope", SCOPE_NEEDS),
             CURSOR,
         ],
@@ -287,7 +262,7 @@ pub const COMMANDS: &[CommandSpec] = &[
         "offer.make",
         &[
             reference("need", NEED).req(),
-            reference("by", "").req(),
+            reference("by", PERSON).req(),
             text("quantity").req(),
             reference("resource", RESOURCE),
             text("note"),
@@ -326,20 +301,7 @@ pub const COMMANDS: &[CommandSpec] = &[
         ],
         &[reference("id", CAPACITY).req()],
     ),
-    CommandSpec::done(
-        CAPACITY,
-        "change",
-        K::Change,
-        "capacity.set",
-        &[
-            id(CAPACITY),
-            when("from"),
-            when("to"),
-            text("minutesPerWeek"),
-            text("note"),
-        ],
-        &[],
-    ),
+    CommandSpec::done(CAPACITY, "change", K::Change, "capacity.set", &[], &[]),
     CommandSpec::done(
         CAPACITY,
         "find",
@@ -407,8 +369,8 @@ pub const COMMANDS: &[CommandSpec] = &[
         K::Create,
         "allocation.propose",
         &[
-            reference("person", "").req(),
-            reference("subject", "").req(),
+            reference("person", PERSON).req(),
+            reference("subject", TASK).req(),
             when("from").req(),
             when("to").req(),
             text("minutes").req(),

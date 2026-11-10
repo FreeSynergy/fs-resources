@@ -53,7 +53,14 @@ async fn types_answers_six_types_with_all_commands_missing_ones_included() {
             .collect();
         assert_eq!(
             names,
-            ["Allocation", "Capacity", "Need", "Offer", "Reservation", "Resource"]
+            [
+                "Allocation",
+                "Capacity",
+                "Need",
+                "Offer",
+                "Reservation",
+                "Resource"
+            ]
         );
         let mut commands = 0;
         for t in types.iter() {
@@ -61,7 +68,10 @@ async fn types_answers_six_types_with_all_commands_missing_ones_included() {
             commands += t.get_commands().unwrap().len() as usize;
         }
         assert_eq!(commands, COMMANDS.len());
-        let resource = types.iter().find(|t| t.get_name().unwrap() == "Resource").unwrap();
+        let resource = types
+            .iter()
+            .find(|t| t.get_name().unwrap() == "Resource")
+            .unwrap();
         let kind = resource
             .get_fields()
             .unwrap()
@@ -75,7 +85,18 @@ async fn types_answers_six_types_with_all_commands_missing_ones_included() {
             .iter()
             .find(|c| c.get_name().unwrap() == "setMinimum")
             .expect("a command a requirement asks for is in the description");
-        assert_eq!(missing.get_kind().unwrap(), CommandKind::Change);
+        assert_eq!(missing.get_kind().unwrap(), CommandKind::Other);
+        assert!(
+            !missing.get_supported(),
+            "missing commands travel with supported = false"
+        );
+        let create = resource
+            .get_commands()
+            .unwrap()
+            .iter()
+            .find(|c| c.get_name().unwrap() == "create")
+            .unwrap();
+        assert!(create.get_supported());
     })
     .await;
 }
@@ -85,11 +106,24 @@ async fn the_reports_come_from_the_core() {
     with_root(|root| async move {
         let answer = root.support_report_request().send().promise.await.unwrap();
         let report = answer.get().unwrap().get_report().unwrap();
-        assert_eq!(report.get_provider().unwrap().to_str().unwrap(), "fs-resources-core");
+        assert_eq!(
+            report.get_provider().unwrap().to_str().unwrap(),
+            "fs-resources-core"
+        );
         let entries = report.get_entries().unwrap();
-        assert!(entries.iter().any(|e| e.get_capability().unwrap() == "resource.create" && e.get_supported()));
+        assert!(
+            entries
+                .iter()
+                .any(|e| e.get_capability().unwrap() == "resource.create" && e.get_supported())
+        );
         let answer = root.capabilities_request().send().promise.await.unwrap();
-        let ids = answer.get().unwrap().get_capabilities().unwrap().get_ids().unwrap();
+        let ids = answer
+            .get()
+            .unwrap()
+            .get_capabilities()
+            .unwrap()
+            .get_ids()
+            .unwrap();
         assert!(ids.iter().any(|i| i.unwrap() == "reservation.decide"));
     })
     .await;
@@ -99,9 +133,15 @@ async fn the_reports_come_from_the_core() {
 async fn the_rest_of_the_contract_is_not_served() {
     with_root(|root| async move {
         let refused = root.items_request().send().promise.await;
-        assert!(refused.is_err(), "items must answer unimplemented, not an empty capability");
+        assert!(
+            refused.is_err(),
+            "items must answer unimplemented, not an empty capability"
+        );
         let refused = root.capacity_request().send().promise.await;
-        assert!(refused.is_err(), "capacity stays refused until the transport knows the caller");
+        assert!(
+            refused.is_err(),
+            "capacity stays refused until the transport knows the caller"
+        );
     })
     .await;
 }
