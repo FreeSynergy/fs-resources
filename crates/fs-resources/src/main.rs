@@ -47,6 +47,8 @@ fn window(words: &[String]) -> ExitCode {
 
 #[cfg(not(feature = "gui"))]
 fn window(_words: &[String]) -> ExitCode {
-    eprintln!("fs-resources: this build has no window (built with --no-default-features); use `fs-resources serve`");
+    eprintln!(
+        "fs-resources: this build has no window (built with --no-default-features); use `fs-resources serve`"
+    );
     ExitCode::FAILURE
 }

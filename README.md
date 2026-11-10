@@ -32,7 +32,7 @@ Resources belongs to the project-management and democracy suites. FreeSynergy is
 
 ## For developers
 
-- Workspace crate: `fs-resources-core` (core, no GUI).
+- Workspace crates: `fs-resources-core` (core and type description), `fs-resources-server` (Cap'n Proto root: types, reports), `fs-resources-app` (window: generated admin frontend over the core), `fs-resources` (the one binary: window, `serve`).
 - The contract is `resources.capnp` in [fs-interfaces](https://github.com/FreeSynergy/fs-interfaces) (draft, provisional). Resources owns it.
 - Build and test: `cargo build --workspace` and `cargo test --workspace`.
 - Design and decisions: [DESIGN.md](DESIGN.md).

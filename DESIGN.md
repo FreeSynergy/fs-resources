@@ -5,7 +5,7 @@
 
 ## State
 
-Version 0.1.0. No capnp server and no GUI.
+Version 0.0.1 (+ round 3, branch `r3-types`): core, type description, a capnp server for the root, and a window (generated Admin frontend).
 
 | Area | State |
 |---|---|
@@ -13,7 +13,11 @@ Version 0.1.0. No capnp server and no GUI.
 | Capacity, allocations, shares: own unlogged store, acting person only, `as_actor` | done; the RPC server must refuse them until the transport knows the caller |
 | `groupLoad` through `GroupLookup` | done, with the limits below |
 | Needs and offers, reservation on accepting | done; see Open points |
-| capnp server, costs, MSPDI, skills | not built |
+| Type description (ADR 0066) of Resource, Reservation, Need, Offer, Capacity, Allocation; table in `describe/commands.rs` | done, see below |
+| capnp server: `types`, `capabilities`, `supportReport` | done (crate `fs-resources-server`) |
+| capnp server: `items`, `reservations`, `capacity`, `needs`, `subscribe` | **Unsupported**: not served (Cap'n Proto answers unimplemented); `capacity` must stay refused until the transport knows the caller |
+| Window `fs-resources` (crate `fs-resources-app`, binary crate `fs-resources`) | done: shell (ADR 0065) + `fs-admin-frontend` over the catalog, core in process |
+| costs, MSPDI, skills | not built |
 | Tests | 115, real stores |
 
 Checked by an independent reviewer over four rounds before the tag.
@@ -66,3 +70,46 @@ State pattern for both. `covered` = sum of accepted offers, and the need becomes
 
 ### Not built
 Costs, a time ledger, MSPDI import and export (fit unproven), skills, and scenarios. They have no contract method.
+
+## Round 3: type description, server, window (ADR 0066)
+
+### Pattern map (new parts)
+| Where | Pattern | Why |
+|---|---|---|
+| `describe/commands.rs` `COMMANDS` | Registry as data | the single table of every command, with `supported`; description, backend refusal and the test against `requirements.md` read only it |
+| `describe/spec.rs` | Value object + const builders | the tables read as lists |
+| `describe/build.rs` | Adapter + Registry entry | table to `fs-types` description; `impl DescribesType` for the six stored types |
+| `fs-resources-server` `root.rs` | Adapter | the root of `resources.capnp`; `types` serves `fs_types::CatalogServer` over `registry()` |
+| `fs-resources-app` `backend/` | Repository (frontend trait) + Strategy per type | `CoreBackend` per data type, calling the core only through `Items`, `Reservations`, `Capacities`, `Needs` (`Ports`) |
+| `fs-resources-app` `window.rs`, `gui.rs` | Facade | wiring only: no render code, no look (ADR 0066) |
+
+### Types and standards
+Six types are described: `Resource`, `Reservation`, `Need`, `Offer`, `Capacity`, `Allocation` (`GroupShare` is internal, no command). No open standard exists for a resource model, so each names "own model: resources.capnp". Fields follow `resources.capnp`.
+**Unsupported (no basic type yet):** numbers (quantity, minutes) and booleans are `text` / `choice`; the core parses them and refuses what is not a number. A reference names one type only: `owner`, `holder`, `by`, `person` say `Person` though a group IRI is also valid; `subject` says `Task` though an event or project is also valid; `place` says `Place`.
+
+### Commands
+Every command of the contract and of `requirements.md` is in `COMMANDS` (42 rows). **Lists are `find`** (empty term = all, pages are walked by the backend; the core has no "all reservations" or "all offers" read, so those walk resources or needs). **`change` is an `Edit`** (field path, basic type, values; not in the edit = unchanged, no values = cleared); the backend refuses an edit of a field the core cannot change (`kind`, `state`, `resource`, `holder` ...) with a finding on it. Commands on a record: `TypeDescription::record_commands`.
+The `supported` flag goes on the wire in `describe/build.rs` (`CommandDescription::unsupported()`), from the table. Switched from the local rule to the schema flag when `fs-interfaces` v0.0.11 appeared; `unsupported_commands()` and the backend refusal stay (the frontend asks `Backend::supported` too).
+
+`requirements.md` has five rows, all `proposed`:
+| Requirement | Commands | State |
+|---|---|---|
+| Generate list and form views from a type description | the generated frontend itself | done |
+| Link records of one area to another by interface | `Resource.link` | **Unsupported** (supported = false) |
+| Stock with minimum amount and due date, missing items to a list | `Resource.setMinimum`, `Resource.missing` | **Unsupported** |
+| Check-out/check-in with status labels deciding assignability | `Resource.checkOut`, `checkIn`, `setStatus` | **Unsupported** (`finish` covers return, but no status labels exist) |
+| Item classes: tagged, interchangeable, part of, used up | `Resource.setClass` | **Unsupported** (`kind` = thing/room/material only) |
+`tests/describe.rs` reads a verbatim copy of the requirements page (`tests/fixtures/requirements.md`, copied 2026-11-10 from fs-documentation) and fails if a row is missing from the table or a command stands for no row; refresh the fixture when the page changes.
+
+### The window
+`fs-resources` without arguments opens the window: a screen per type, standard menus (ADR 0065). The core runs in this process (two stores: `objects.db` and the private `private.db` in `$XDG_DATA_HOME/freesynergy/resources`; `--memory` keeps nothing), the actor is the local owner (provisional, no sign-in yet). `fs-resources serve` runs the server.
+* `fs-admin-frontend` is used at the commit named in `crates/fs-resources-app/Cargo.toml` (provisional, until a tag).
+* A refusal by a rule of the core (overbooked, wrong state, overlap, no group lookup) is `Rejected` with no finding, because `RecordProblem` has no "the program's rule refused" code; the reason goes to stderr. Needs a code from thread T/A.
+* A command that is not supported is refused by the backend with a finding on the command's name (`RecordProblem::UnknownField`): provisional stand-in for a typed Unsupported problem.
+* Groups are named in the backend by `urn:uuid:<id>`: this program cannot know another program's IRI form.
+* `capacity` acts for the actor the repo was built with; that is right for the in-process window and wrong for any server, which stays Unsupported until the transport knows the caller.
+* Colour and style: the frontend's; none here. The existing demo in `fs-resources-core/examples` is text, not a render.
+
+### Open
+* Server methods for items, reservations, needs: not built (above).
+* The offline refusal of `groupLoad` (no Groups program connected in the window) shows as "refused".
