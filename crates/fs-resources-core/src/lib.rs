@@ -21,6 +21,7 @@
     clippy::too_many_arguments
 )]
 
+pub mod describe;
 mod error;
 pub mod model;
 mod repo;

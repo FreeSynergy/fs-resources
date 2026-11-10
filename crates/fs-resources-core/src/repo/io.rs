@@ -16,6 +16,11 @@ impl ResourceRepo {
         format!("https://{}/resources/{}", self.instance, id)
     }
 
+    /// The IRI that names the object `id` outside this instance (the AS2 `id`, ADR 0027).
+    pub fn iri_of(&self, id: ObjectId) -> String {
+        self.iri(id)
+    }
+
     fn object<T: Record>(&self, value: &T) -> Result<StoredObject> {
         let mut e = Envelope::new(T::TYPE, value.name());
         e.id = value.id();
